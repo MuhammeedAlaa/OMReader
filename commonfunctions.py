@@ -97,3 +97,22 @@ def readDataSet():
                 image = (image * 255).astype("uint8")
             dataset.append(image)
     return dataset
+
+
+def hybridMedian(img):
+    # applying the 3 * 3 hybrid filter
+    # define filter shapes for different spatial directions
+    img_grayscale = np.copy(img)
+    img_grayscale = img_grayscale.astype(np.uint8)
+    cross_filter = np.array([[1, 0, 1], [0, 1, 0], [1, 0, 1]])
+    plus_filter = np.array([[0, 1, 0], [1, 1, 1], [0, 1, 0]])
+    fil_cross = median(img_grayscale, cross_filter)
+    fil_plus = median(img_grayscale, plus_filter)
+
+    # calculate the median of the three images for each pixel
+    combined_images = np.array([fil_cross, fil_plus, img_grayscale])
+    filtered_img_hybrid = np.median(combined_images, axis=0)
+    return filtered_img_hybrid
+
+
+

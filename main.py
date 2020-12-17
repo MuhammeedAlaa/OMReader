@@ -1,6 +1,23 @@
 from commonfunctions import *
 
 
-img = rgb2gray(io.imread('dataset/scanned_sheet.jpg'))
-img_filtered = gaussian(img, sigma=1)
-show_images([img, img_filtered], ["original image", "filtered image"])
+img = rgb2gray(io.imread('dataset/note_dot_test_2.png'))
+noisy_img = random_noise(img, mode='s&p', amount=0.1)
+noisy_img = (noisy_img * 255).astype(np.uint8)
+# Median filtering using the hybrid Median filter
+img_median_filtered = hybridMedian(noisy_img)
+img_median_filtered = img_median_filtered.astype(np.uint8)
+# img_median_filtered = median(noisy_img)
+# gaussian filtering
+img_gaussian_filtered = gaussian(img_median_filtered, sigma=0.2)
+img_gaussian_filtered = (img_gaussian_filtered * 255).astype(np.uint8)
+
+# image binarization
+binary = adaptiveThresh(img_gaussian_filtered, t=15, div=8)
+
+images = [img, noisy_img, img_median_filtered, img_gaussian_filtered, binary]
+titles = ["original", "s&p noise", "median", "median & gaussian", "binary"]
+show_images(images, titles)
+
+
+
