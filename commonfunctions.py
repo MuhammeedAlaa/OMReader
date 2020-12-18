@@ -10,12 +10,18 @@ import os
 
 # Convolution:
 from scipy.signal import convolve2d
+from scipy.stats import mode
+
 from scipy import fftpack
 import math
 
 from skimage.util import random_noise, pad
 from skimage.filters import median, gaussian
 from skimage.feature import canny
+from skimage.transform import hough_line, hough_line_peaks
+from skimage.transform import rotate
+
+
 
 # Show the figures / plots inside the notebook
 
@@ -115,4 +121,12 @@ def hybridMedian(img):
     return filtered_img_hybrid
 
 
-
+def skew_angle_hough_transform(image):
+    edges = canny(image)
+    tested_angles = np.deg2rad(np.arange(0.1, 180.0))
+    h, theta, d = hough_line(edges, theta=tested_angles)
+    accum, angles, dists = hough_line_peaks(h, theta, d)
+    most_common_angle = mode(np.around(angles, decimals=2))[0]
+    skew_angle = np.rad2deg(most_common_angle - np.pi/2)
+    img_rotated = rotate(image, skew_angle, mode='constant', cval=255)
+    return img_rotated
