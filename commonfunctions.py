@@ -77,7 +77,7 @@ def four_point_transform(image, pts):
 def deskew_projection(gray_img):  
     img = cv2.GaussianBlur(gray_img.copy(), (3,3), 1)
     edged_img = cv2.Canny(img, 30, 200)
-    se = cv2.getStructuringElement(cv2.MORPH_RECT, (10,40))
+    se = cv2.getStructuringElement(cv2.MORPH_RECT, (20,60))
     dilated_img = cv2.dilate(edged_img, se, 5)
     contours, hier = cv2.findContours(dilated_img.astype(np.uint8), cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
     contours = sorted(contours, key=cv2.contourArea, reverse=True)
@@ -94,6 +94,11 @@ def projection_correction(img):
     img3 = deskew_projection(img2)
     return img3
 
+#image = rgb2gray(io.imread('scanned_sheet_low.jpg'))
+#if image.dtype != "uint8":
+#    image = (image * 255).astype("uint8")
+#img2 = projection_correction(image)
+#io.imshow(img2)
 
 # Show the figures / plots inside the notebook
 def show_images(images, titles=None):
