@@ -35,6 +35,19 @@ def order_points(pts):
     diff = np.diff(pts, axis=1)
     rect[1] = pts[np.argmin(diff)]
     rect[3] = pts[np.argmax(diff)]
+
+    rect[0,0] -= 20
+    rect[0,1] -= 20
+
+    rect[1,0] += 20
+    rect[1,1] -= 20
+
+    rect[2,0] += 20
+    rect[2,1] += 20
+
+    rect[3,0] -= 20
+    rect[3,1] += 20
+
     return rect
 
 
@@ -61,32 +74,25 @@ def four_point_transform(image, pts):
     warped = cv2.warpPerspective(image, M, (maxWidth, maxHeight))
     return warped
     
-def deskew_projection(img):  
-    img_gray = img
-    img = cv2.Canny(img, 100, 200)
-    se = np.ones((50, 50))
-    #img = cv2.morphologyEx(img, cv2.MORPH_CLOSE, se).astype(np.uint8)
-    img = cv2.dilate(img, se,iterations = 1).astype(np.uint8)
-    #io.imshow(img)
-    countours, hierarcy = cv2.findContours(img, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
-    countours_sorted = sorted(countours, key=cv2.contourArea, reverse=True)
-    contour = countours_sorted[0]
-    
-    perim = cv2.arcLength(contour, True)
-    epsilon = 0.02*perim
-    approxCorners = cv2.approxPolyDP(contour, epsilon, True)
-    approxCornersNumber = len(approxCorners)
-    
-    #plt.imshow(img_orig)
-    #for p in approxCorners:
-    #    plt.plot(p[0][0], p[0][1], 'bo')
-    #plt.show()
-    
-    pt = np.array(approxCorners).reshape(approxCornersNumber, 2)
-    img_fixed = four_point_transform(img_gray, pt)
-    return img_fixed
+def deskew_projection(gray_img):  
+    img = cv2.GaussianBlur(gray_img.copy(), (3,3), 1)
+    edged_img = cv2.Canny(img, 30, 200)
+    se = cv2.getStructuringElement(cv2.MORPH_RECT, (10,40))
+    dilated_img = cv2.dilate(edged_img, se, 5)
+    contours, hier = cv2.findContours(dilated_img.astype(np.uint8), cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
+    contours = sorted(contours, key=cv2.contourArea, reverse=True)
+    max_contour = contours[0]
+    pts = np.zeros((max_contour.shape[0], 2), dtype=max_contour.dtype)
+    for i in range(max_contour.shape[0]):
+        pts[i] = max_contour[i, 0]
+    gray_img = np.pad(gray_img, 100, mode='edge')
+    wrapped_img = four_point_transform(gray_img, order_points(pts)+100)
+    return wrapped_img
 
-
+def projection_correction(img):
+    img2 = deskew_projection(img)
+    img3 = deskew_projection(img2)
+    return img3
 
 
 # Show the figures / plots inside the notebook
