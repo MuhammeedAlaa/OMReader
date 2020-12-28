@@ -7,6 +7,7 @@ from skimage.exposure import histogram
 from matplotlib.pyplot import bar
 from skimage.color import rgb2gray, rgb2hsv
 import os
+from staffLine import staffLineRemoval
 
 # Convolution:
 from scipy.signal import convolve2d

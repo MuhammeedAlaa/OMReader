@@ -18,9 +18,11 @@ binary = adaptiveThresh(img_gaussian_filtered, t=15, div=8)
 # image rotation
 image_rotated = skew_angle_hough_transform(binary)
 
+# staff line removal
+image_no_staff = staffLineRemoval(image_rotated, 1)
 
-images = [img, noisy_img, img_median_filtered, img_gaussian_filtered, binary, image_rotated]
-titles = ["original", "s&p noise", "median", "median & gaussian", "binary", "Rotated"]
+images = [img, noisy_img, img_median_filtered, img_gaussian_filtered, binary, image_rotated, image_no_staff]
+titles = ["original", "s&p noise", "median", "median & gaussian", "binary", "Rotated", "no staff"]
 show_images(images, titles)
 
 
