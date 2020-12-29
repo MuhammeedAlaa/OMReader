@@ -21,7 +21,7 @@ from skimage.transform import hough_line, hough_line_peaks
 from skimage.transform import rotate
 
 import cv2
-import imutils
+# import imutils
 from skimage import exposure
 from skimage.morphology import binary_closing
 
