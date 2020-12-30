@@ -224,3 +224,17 @@ def skew_angle_hough_transform(image):
     skew_angle = np.rad2deg(most_common_angle - np.pi/2)
     img_rotated = rotate(image, skew_angle, mode='constant', cval=255)
     return img_rotated
+
+def sort_contours(cnts, method="left-to-right"):
+    reverse = False
+    i = 0
+    if method == "right-to-left" or method == "bottom-to-top":
+        reverse = True
+    if method == "top-to-bottom" or method == "bottom-to-top":
+        i = 1
+
+    boundingBoxes = [cv2.boundingRect(c) for c in cnts]
+    (cnts, boundingBoxes) = zip(*sorted(zip(cnts, boundingBoxes),
+        key=lambda b:b[1][i], reverse=reverse))
+    # return the list of sorted contours and bounding boxes
+    return (cnts, boundingBoxes)
