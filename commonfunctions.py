@@ -225,7 +225,7 @@ def skew_angle_hough_transform(image):
     img_rotated = rotate(image, skew_angle, mode='constant', cval=255)
     return img_rotated
 
-def sort_contours(cnts, method="left-to-right"):
+def sort_contours_horizontally(cnts, method="left-to-right"):
     reverse = False
     i = 0
     if method == "right-to-left" or method == "bottom-to-top":
@@ -238,3 +238,63 @@ def sort_contours(cnts, method="left-to-right"):
         key=lambda b:b[1][i], reverse=reverse))
     # return the list of sorted contours and bounding boxes
     return (cnts, boundingBoxes)
+
+
+def split_objects(img_thresh):
+    img_objects , staffLines = staffLineRemoval(img_thresh, 1)
+    height = img_objects.shape[0]
+    count_blocks = len(staffLines) // 5
+    
+    if count_blocks > 1: 
+        padding_up = (staffLines[5] - staffLines[4]) // 2 
+        padding_down = padding_up 
+    else:
+        padding_up = staffLines[0]
+        padding_down =  height - staffLines[4]
+
+    blocks = []
+    blocks_orginal = []
+    for i in range(0 , count_blocks):
+        if i == 0:
+            blocks.append(img_objects[0: staffLines[i * 5 + 4] + padding_down,:])
+            blocks_orginal.append(img_thresh[0: staffLines[i * 5 + 4] + padding_down,:])
+        elif i == count_blocks - 1:
+            blocks.append(img_objects[staffLines[i * 5] - padding_up: height ,:])            
+            blocks_orginal.append(img_thresh[staffLines[i * 5] - padding_up: height ,:])            
+        else:
+            blocks.append(img_objects[staffLines[i * 5] - padding_up: staffLines[i * 5 + 4] + padding_down,:])
+            blocks_orginal.append(img_thresh[staffLines[i * 5] - padding_up: staffLines[i * 5 + 4] + padding_down,:])
+    
+    staffHeight = staffLines[4] - staffLines[3]
+    
+    objects = []
+    
+    for i  in  range(count_blocks):
+        contours, hier = cv2.findContours(255 - blocks[i], cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+        cnt = []
+        for j in range (0, len(contours)):
+            if hier[0,j,3] == -1:
+                cnt.append(contours[j])
+        cnt, boxes_sorted = sort_contours_horizontally(cnt)        
+        for c in cnt:
+            rect = cv2.minAreaRect(c)
+            box = cv2.boxPoints(rect)
+            box = np.int0(box)
+            box = order_box(box)
+            Xmin = int(np.min(box[:,0]))
+            Xmax = int(np.max(box[:,0]))
+            Ymin = int(np.min(box[:,1]))
+            Ymax = int(np.max(box[:,1]))
+            object_width = Xmax - Xmin
+            object_height = Ymax - Ymin
+            if object_width > staffHeight: 
+                current_obj = blocks_orginal[i][0:blocks[i].shape[0], Xmin:Xmax]
+                objects.append(current_obj)  
+            elif object_height <= staffHeight//2:
+                point_img = np.ones((blocks[i].shape[0],15))
+                point_img[blocks[i].shape[0]//2-3:blocks[i].shape[0]//2+3, 5:10] = 0
+                objects.append(point_img)   
+    for im in objects:
+        show_images([im])
+
+
