@@ -37,18 +37,31 @@ def order_points(pts):
     rect[1] = pts[np.argmin(diff)]
     rect[3] = pts[np.argmax(diff)]
 
-    rect[0,0] -= 20
-    rect[0,1] -= 20
+    rect[0, 0] -= 20
+    rect[0, 1] -= 20
 
-    rect[1,0] += 20
-    rect[1,1] -= 20
+    rect[1, 0] += 20
+    rect[1, 1] -= 20
 
-    rect[2,0] += 20
-    rect[2,1] += 20
+    rect[2, 0] += 20
+    rect[2, 1] += 20
 
-    rect[3,0] -= 20
-    rect[3,1] += 20
+    rect[3, 0] -= 20
+    rect[3, 1] += 20
 
+    return rect
+
+
+def order_box(pts):
+    rect = np.zeros((4, 2), dtype="float32")
+
+    s = pts.sum(axis=1)
+    rect[0] = pts[np.argmin(s)]
+    rect[2] = pts[np.argmax(s)]
+
+    diff = np.diff(pts, axis=1)
+    rect[1] = pts[np.argmin(diff)]
+    rect[3] = pts[np.argmax(diff)]
     return rect
 
 
@@ -74,13 +87,15 @@ def four_point_transform(image, pts):
     M = cv2.getPerspectiveTransform(rect, dst)
     warped = cv2.warpPerspective(image, M, (maxWidth, maxHeight))
     return warped
-    
-def deskew_projection(gray_img):  
-    img = cv2.GaussianBlur(gray_img.copy(), (3,3), 1)
+
+
+def deskew_projection(gray_img):
+    img = cv2.GaussianBlur(gray_img.copy(), (3, 3), 1)
     edged_img = cv2.Canny(img, 30, 200)
-    se = cv2.getStructuringElement(cv2.MORPH_RECT, (20,60))
+    se = cv2.getStructuringElement(cv2.MORPH_RECT, (20, 60))
     dilated_img = cv2.dilate(edged_img, se, 5)
-    contours, hier = cv2.findContours(dilated_img.astype(np.uint8), cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
+    contours, hier = cv2.findContours(dilated_img.astype(
+        np.uint8), cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
     contours = sorted(contours, key=cv2.contourArea, reverse=True)
     max_contour = contours[0]
     pts = np.zeros((max_contour.shape[0], 2), dtype=max_contour.dtype)
@@ -90,18 +105,21 @@ def deskew_projection(gray_img):
     wrapped_img = four_point_transform(gray_img, order_points(pts)+100)
     return wrapped_img
 
+
 def projection_correction(img):
     img2 = deskew_projection(img)
     img3 = deskew_projection(img2)
     return img3
 
 #image = rgb2gray(io.imread('scanned_sheet_low.jpg'))
-#if image.dtype != "uint8":
+# if image.dtype != "uint8":
 #    image = (image * 255).astype("uint8")
 #img2 = projection_correction(image)
-#io.imshow(img2)
+# io.imshow(img2)
 
 # Show the figures / plots inside the notebook
+
+
 def show_images(images, titles=None):
     # This function is used to show image(s) with titles by sending an array of images and an array of associated titles.
     # images[0] will be drawn with the title titles[0] if exists

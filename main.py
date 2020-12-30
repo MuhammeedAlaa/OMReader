@@ -23,7 +23,7 @@ image_rotated = (image_rotated * 255).astype(np.uint8)
 binary = adaptiveThresh(image_rotated, t=15, div=8)
 
 # staff line removal
-image_no_staff = staffLineRemoval(binary, 1)
+image_no_staff, stuff = staffLineRemoval(binary, 1)
 
 io.imshow(img)
 io.show()
@@ -42,6 +42,3 @@ io.show()
 # images = [img, noisy_img, img_median_filtered, img_gaussian_filtered, binary, image_rotated, image_no_staff]
 # titles = ["original", "s&p noise", "median", "median & gaussian", "binary", "Rotated", "no staff"]
 # show_images(images, titles)
-
-
-

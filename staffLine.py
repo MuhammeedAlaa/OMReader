@@ -6,7 +6,7 @@ import skimage.io as io
 
 
 def staffLineRemoval(thresholdedImg, thicknessThresholdFraction):
-    img = np.copy(thresholdedImg) # for convinience :)
+    img = np.copy(thresholdedImg)  # for convinience :)
     height, width = img.shape
     # Invert the input binary image
     imgBinary = 255 - img
@@ -15,13 +15,14 @@ def staffLineRemoval(thresholdedImg, thicknessThresholdFraction):
     hspace, angles, dists = hough_line(imgBinary)
     hspace, angles, dists = hough_line_peaks(hspace, angles, dists)
     staffLines = np.sort(np.round(dists).astype('int32'))
-  
+
     # find most common black pixel run length (white pixel run length in binary image due to inversion)
     # This should correspond to staff line thickness
     staffLineThickness = verticalRunLengthMode(imgBinary, 255, width, height)
-    staffLineSpacing = verticalRunLengthMode(imgBinary,0, width, height) #TODO: check whether the addition is needed
+    # TODO: check whether the addition is needed
+    staffLineSpacing = verticalRunLengthMode(imgBinary, 0, width, height)
 
-    threshold = staffLineSpacing / 2 # TODO: check whether needed
+    threshold = staffLineSpacing / 2  # TODO: check whether needed
     for staffLineRow in staffLines:
         for x in range(width-1, 0, -1):
             if img[staffLineRow, x] != 0:
@@ -32,22 +33,24 @@ def staffLineRemoval(thresholdedImg, thicknessThresholdFraction):
                     if img[staffLineRow - j, x] == 0:
                         staffLineRow = staffLineRow - j
                         break
-            verticalThresholdResult = testVerticalThreshold(img, x, staffLineRow, staffLineThickness*thicknessThresholdFraction)
+            verticalThresholdResult = testVerticalThreshold(
+                img, x, staffLineRow, staffLineThickness*thicknessThresholdFraction)
             if(verticalThresholdResult[0]):
-                rr, cc = line(verticalThresholdResult[1], x, verticalThresholdResult[2], x)
+                rr, cc = line(
+                    verticalThresholdResult[1], x, verticalThresholdResult[2], x)
                 img[rr, cc] = 255
-        #TODO: fix with morphology the broken objects
-    return img
+        # TODO: fix with morphology the broken objects
+    return (img, staffLines)
 
 
 # Returns the mode vertical run length of the given colour in the input image
-def verticalRunLengthMode(img,colour, width, height):
+def verticalRunLengthMode(img, colour, width, height):
     runLengths = []
     for x in range(0, width):
         inColour = False
         currentRun = 0
-        for y in range(0,height):
-            if (img[y,x] == colour):
+        for y in range(0, height):
+            if (img[y, x] == colour):
                 if (inColour):
                     currentRun = currentRun + 1
                 else:
