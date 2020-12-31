@@ -277,14 +277,11 @@ def split_objects(img_thresh):
                 cnt.append(contours[j])
         cnt, boxes_sorted = sort_contours_horizontally(cnt)        
         for c in cnt:
-            rect = cv2.minAreaRect(c)
-            box = cv2.boxPoints(rect)
-            box = np.int0(box)
-            box = order_box(box)
-            Xmin = int(np.min(box[:,0]))
-            Xmax = int(np.max(box[:,0]))
-            Ymin = int(np.min(box[:,1]))
-            Ymax = int(np.max(box[:,1]))
+            Xmin = int(np.min(c[:,0, 0]))
+            Xmax = int(np.max(c[:,0, 0]))
+            Ymin = int(np.min(c[:,0, 1]))
+            Ymax = int(np.max(c[:,0, 1]))
+
             object_width = Xmax - Xmin
             object_height = Ymax - Ymin
             if object_width > staffHeight: 
