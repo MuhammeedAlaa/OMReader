@@ -23,7 +23,10 @@ from skimage.transform import rotate
 import cv2
 # import imutils
 from skimage import exposure
-from skimage.morphology import binary_closing
+from skimage.morphology import binary_closing, binary_erosion, disk
+from skimage.draw import ellipse
+from skimage.transform import hough_circle, hough_circle_peaks
+
 
 
 def order_points(pts):
@@ -284,14 +287,13 @@ def split_objects(img_thresh):
 
             object_width = Xmax - Xmin
             object_height = Ymax - Ymin
-            if object_width > staffHeight: 
-                current_obj = blocks_orginal[i][0:blocks[i].shape[0], Xmin:Xmax]
+            if object_width > staffHeight//2: 
+                current_obj = blocks[i][0:blocks[i].shape[0], Xmin:Xmax]
                 objects.append(current_obj)  
             elif object_height <= staffHeight//2:
                 point_img = np.ones((blocks[i].shape[0],15))
                 point_img[blocks[i].shape[0]//2-3:blocks[i].shape[0]//2+3, 5:10] = 0
                 objects.append(point_img)   
-    for im in objects:
-        show_images([im])
+    return objects
 
 
