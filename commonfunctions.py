@@ -225,7 +225,7 @@ def skew_angle_hough_transform(image):
     accum, angles, dists = hough_line_peaks(h, theta, d)
     most_common_angle = mode(np.around(angles, decimals=2))[0]
     skew_angle = np.rad2deg(most_common_angle - np.pi/2)
-    img_rotated = rotate(image, skew_angle, mode='constant', cval=255)
+    img_rotated = rotate(image, skew_angle, resize=True, mode='constant', cval=255)
     return img_rotated
 
 def sort_contours_horizontally(cnts, method="left-to-right"):
