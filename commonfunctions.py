@@ -288,7 +288,7 @@ def split_objects(img_thresh):
             object_width = Xmax - Xmin
             object_height = Ymax - Ymin
             if object_width > staffHeight//2: 
-                current_obj = blocks[i][0:blocks[i].shape[0], Xmin:Xmax]
+                current_obj = blocks[i][Ymin:Ymax, Xmin:Xmax]
                 objects.append(current_obj)  
             elif object_height <= staffHeight//2:
                 point_img = np.ones((blocks[i].shape[0],15))
