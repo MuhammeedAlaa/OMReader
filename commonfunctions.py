@@ -273,6 +273,7 @@ def split_objects(img_thresh):
     objects = []
     
     for i  in  range(count_blocks):
+        show_images([blocks[i]])
         contours, hier = cv2.findContours(255 - blocks[i], cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
         cnt = []
         for j in range (0, len(contours)):
@@ -287,13 +288,59 @@ def split_objects(img_thresh):
 
             object_width = Xmax - Xmin
             object_height = Ymax - Ymin
-            if object_width > staffHeight//2: 
+            if object_width > staffHeight/2 and object_height > 3*staffHeight/4: 
                 current_obj = blocks[i][Ymin:Ymax, Xmin:Xmax]
                 objects.append(current_obj)  
-            elif object_height <= staffHeight//2:
-                point_img = np.ones((blocks[i].shape[0],15))
-                point_img[blocks[i].shape[0]//2-3:blocks[i].shape[0]//2+3, 5:10] = 0
+            elif staffHeight/4<=object_height<=staffHeight/2 and staffHeight/4<=object_width<=staffHeight/2:
+                point_img = np.ones((20,20))
+                point_img[7:12, 7:12] = 0
                 objects.append(point_img)   
     return objects
 
 
+def read_temp():
+    directory = os.fsencode("../temp")
+    templates = {}
+    for file in os.listdir(directory):
+        filename = os.fsdecode(file)
+        if filename.endswith(".png") or filename.endswith(".jpg"):
+            image = rgb2gray(io.imread(os.path.join('../temp/', filename)))
+            if image.dtype != "uint8":
+                image = (image * 255).astype("uint8")
+            templates[filename[0:-4]] = image
+    return templates
+
+def check_temp(obj, tmp):
+    #show_images([tmp, obj], ["Template", "Object"])
+    try:
+        sift = cv2.xfeatures2d.SIFT_create()
+        kp1, des1 = sift.detectAndCompute(tmp,None)
+        kp2, des2 = sift.detectAndCompute(obj,None)
+        bf = cv2.BFMatcher()
+        matches = bf.knnMatch(des1,des2, k=2)
+        good = []
+        for m,n in matches:
+            if m.distance < 0.2*n.distance:
+                good.append([m])
+        p = len(good)/(min(len(kp1), len(kp2)))
+        #print("percentage = {}".format(p*100))
+        return p*100
+    except:
+        #print("percentage = 0")
+        return 0
+
+def check_all_templates(obj):
+    show_images([obj])
+    best_solution = 0
+    label = None
+    
+    for tmp in templates: 
+        result = check_temp(obj, templates[tmp])
+        if result > best_solution:
+            best_solution = result
+            label = tmp
+
+    if (best_solution > 0) and (label is not None):
+        print("Matched with {}".format(label))
+    else:
+        print("Unmatched")
