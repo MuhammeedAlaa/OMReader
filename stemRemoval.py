@@ -1,6 +1,4 @@
-from skimage.transform import hough_line, hough_line_peaks
 import numpy as np
-from scipy import stats
 from skimage.draw import line
 from itertools import groupby
 
@@ -10,7 +8,7 @@ def stemRemoval(img, staffLineSpacing):
     height, width = outputImg.shape
     verticalProjection = (
         np.sum((255 - outputImg)/255, axis=0)).astype('uint64')
-    maxVertical = 3 * staffLineSpacing
+    maxVertical = 3 * staffLineSpacing 
     mask = np.where(verticalProjection <= maxVertical, 0, 1)
     runlengths, startpositions, values = rle(mask)
     stemsWidths = runlengths[np.nonzero(values)[0]]

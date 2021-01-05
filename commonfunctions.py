@@ -243,8 +243,7 @@ def sort_contours_horizontally(cnts, method="left-to-right"):
     return (cnts, boundingBoxes)
 
 
-def split_objects(img_thresh):
-    img_objects , staffLines = staffLineRemoval(img_thresh, 1)
+def split_objects(img_thresh, img_objects, staffLines):
     height = img_objects.shape[0]
     count_blocks = len(staffLines) // 5
     
@@ -255,16 +254,20 @@ def split_objects(img_thresh):
         padding_up = staffLines[0]
         padding_down =  height - staffLines[4]
 
+    blocks_tops = []
     blocks = []
     blocks_orginal = []
     for i in range(0 , count_blocks):
         if i == 0:
+            blocks_tops.append(0)
             blocks.append(img_objects[0: staffLines[i * 5 + 4] + padding_down,:])
             blocks_orginal.append(img_thresh[0: staffLines[i * 5 + 4] + padding_down,:])
         elif i == count_blocks - 1:
+            blocks_tops.append(staffLines[i * 5] - padding_up)
             blocks.append(img_objects[staffLines[i * 5] - padding_up: height ,:])            
             blocks_orginal.append(img_thresh[staffLines[i * 5] - padding_up: height ,:])            
         else:
+            blocks_tops.append(staffLines[i * 5] - padding_up)
             blocks.append(img_objects[staffLines[i * 5] - padding_up: staffLines[i * 5 + 4] + padding_down,:])
             blocks_orginal.append(img_thresh[staffLines[i * 5] - padding_up: staffLines[i * 5 + 4] + padding_down,:])
     
@@ -290,11 +293,11 @@ def split_objects(img_thresh):
             object_height = Ymax - Ymin
             if object_width > staffHeight/2 and object_height > 3*staffHeight/4: 
                 current_obj = blocks[i][Ymin:Ymax, Xmin:Xmax]
-                objects.append(current_obj)  
+                objects.append((current_obj, blocks_tops[i]+Ymin, i))  
             elif staffHeight/4<=object_height<=staffHeight/2 and staffHeight/4<=object_width<=staffHeight/2:
                 point_img = np.ones((20,20))
                 point_img[7:12, 7:12] = 0
-                objects.append(point_img)   
+                objects.append((point_img, blocks_tops[i]+Ymin, i)) 
     return objects
 
 
