@@ -14,8 +14,17 @@ def staffLineRemoval(thresholdedImg, thicknessThresholdFraction):
     # apply hough lines to detect stafflines
     hspace, angles, dists = hough_line(imgBinary)
     hspace, angles, dists = hough_line_peaks(hspace, angles, dists)
+    filtered_dists = []
+    # ---------------------------------------------------------------------------
+    temp_cnt = -1
+    for a in angles:
+        temp_cnt = temp_cnt + 1
+        if a >= 1.56 and a <= 1.58:
+            filtered_dists.append(dists[temp_cnt])
+    # ---------------------------------------------------------------------------
     staffLines = np.sort(np.round(dists).astype('int32'))
-
+    # remove negative staffLines 
+    staffLines = staffLines[staffLines >= 0]
     # find most common black pixel run length (white pixel run length in binary image due to inversion)
     # This should correspond to staff line thickness
     staffLineThickness = verticalRunLengthMode(imgBinary, 255, width, height)
