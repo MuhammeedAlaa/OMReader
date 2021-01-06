@@ -244,7 +244,7 @@ def sort_contours_horizontally(cnts, method="left-to-right"):
 
 
 def split_objects(img_thresh):
-    img_objects , staffLines = staffLineRemoval(img_thresh, 1)
+    img_objects , staffLines, staffLineThickness = staffLineRemoval(img_thresh, 1)
     height = img_objects.shape[0]
     count_blocks = len(staffLines) // 5
     

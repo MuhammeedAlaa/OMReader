@@ -22,7 +22,7 @@ def staffLineRemoval(thresholdedImg, thicknessThresholdFraction):
         if a >= 1.56 and a <= 1.58:
             filtered_dists.append(dists[temp_cnt])
     # ---------------------------------------------------------------------------
-    staffLines = np.sort(np.round(dists).astype('int32'))
+    staffLines = np.sort(np.round(filtered_dists).astype('int32'))
     # remove negative staffLines 
     staffLines = staffLines[staffLines >= 0]
     # find most common black pixel run length (white pixel run length in binary image due to inversion)
@@ -49,7 +49,7 @@ def staffLineRemoval(thresholdedImg, thicknessThresholdFraction):
                     verticalThresholdResult[1], x, verticalThresholdResult[2], x)
                 img[rr, cc] = 255
         # TODO: fix with morphology the broken objects
-    return (img, staffLines)
+    return (img, staffLines, staffLineThickness)
 
 
 # Returns the mode vertical run length of the given colour in the input image
