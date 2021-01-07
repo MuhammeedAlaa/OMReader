@@ -15,12 +15,12 @@ def stemRemoval(img, staffLineSpacing):
     stemsWidths = runlengths[np.nonzero(values)[0]]
     stemsPositions = startpositions[np.nonzero(values)[0]]
 
-    maxStemWidth = np.max(stemsWidths, initial=0)
+    maxStemWidth = int(max(stemsWidths, default=0) * 1.5)
 
     for stem in stemsPositions:
         for y in range(0, height, 1):
             if outputImg[y, stem] != 0:
-                for j in range(1, round(maxStemWidth)):
+                for j in range(1, maxStemWidth//2):
                     if stem + j < width and outputImg[y, stem + j] == 0:
                         stem = stem + j
                         break

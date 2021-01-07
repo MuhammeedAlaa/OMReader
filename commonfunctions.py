@@ -283,7 +283,7 @@ def split_objects(img_thresh, img_objects, staffLines):
     objects = []
 
     for i in range(count_blocks):
-        show_images([blocks[i]])
+        # show_images([blocks[i]])
         contours, hier = cv2.findContours(
             255 - blocks[i], cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
         cnt = []
@@ -392,7 +392,7 @@ def classify_accidentals(obj, templates, staffHeight):
     dictionary_matches["##"] = check_match(templates[5], obj[0])
     dictionary_matches["&"] = check_match(templates[6], obj[0])
     dictionary_matches["full_note"] = check_match(templates[7], obj[0])
-    dictionary_matches["natural"] = check_match(templates[8], obj[0])
+    dictionary_matches[""] = check_match(templates[8], obj[0])
     dictionary_matches["#"] = check_match(templates[9], obj[0])
     # for mat in dictionary_matches:
     #    print(mat + " = {}".format(dictionary_matches[mat]))
@@ -455,3 +455,24 @@ def get_start_x(binary, numStaffLines, staffHeight):
     runlengths, startpositions, values = rle(mask)
     start_x = startpositions[np.argmax(runlengths)] + staffHeight
     return start_x
+
+
+def writeOutput(filename, outputList):
+    outputString = ''
+    with open(filename, 'w') as f:
+        if(len(outputList)>1):
+            outputString = outputString + "{\n[ "
+        else:
+            outputString = outputString + "[ "
+        
+        for block in outputList:
+            for item in block:
+                outputString = outputString + item + ' '
+            outputString = outputString + "],\n[ "
+        
+        outputString = outputString[:-4]
+
+        if(len(outputList) > 1):
+            outputString = outputString + '\n}'
+
+        f.write(outputString)

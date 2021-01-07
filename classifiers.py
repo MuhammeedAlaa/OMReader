@@ -63,7 +63,7 @@ def getPitchesCoordinates(staffLineSpacing, staffLines, blockNumber):
 def getHeads(staffLineSpacing, objectWithoutStem):
     se = disk((staffLineSpacing-2) // 2 - 1)
     eroded = binary_erosion(objectWithoutStem, se)
-    show_images([eroded], ['Heads'])
+    # show_images([eroded], ['Heads'])
     label_img, num = label(eroded, background=0,
                            return_num=True, connectivity=2)
     props = regionprops(label_img)
@@ -82,14 +82,12 @@ def classifierB(objectWithoutStem, staffLineSpacing, objectTop, pitches, pitches
     if len(whiteRunHeight) == 2:
         headPosition = (
             whiteRunPositions[0] + (whiteRunPositions[1] + whiteRunHeight[1])) // 2 + objectTop
-        # print(str(pitches[find_nearest(pitches_coord, headPosition)])+'/2')
         return pitches[find_nearest(pitches_coord, headPosition)] + '/2'
     elif len(whiteRunHeight) == 1:
         headPosition = whiteRunPositions[0] + \
             whiteRunHeight[0] // 2 + objectTop
-        # print(str(pitches[find_nearest(pitches_coord, headPosition)])+'/4')
         return pitches[find_nearest(pitches_coord, headPosition)] + '/4'
-
+    return ''
 
 def classifierC(objectWithoutStem, stems, staffLineSpacing, objectTop, pitches, pitches_coord):
     stemPos, stemWidth = stems[0]
@@ -120,14 +118,12 @@ def classifierC(objectWithoutStem, stems, staffLineSpacing, objectTop, pitches, 
         headPosition = whiteRunPositionsLeftStem[-1] + \
             whiteRunHeightLeftStem[-1] // 2 + objectTop
     if oneRuns == 1:
-        # print(str(pitches[find_nearest(pitches_coord, headPosition)])+'/8')
         return pitches[find_nearest(pitches_coord, headPosition)] + '/8'
     elif oneRuns == 2:
-        # print(str(pitches[find_nearest(pitches_coord, headPosition)])+'/16')
         return pitches[find_nearest(pitches_coord, headPosition)] + '/16'
     elif oneRuns == 3:
-        # print(str(pitches[find_nearest(pitches_coord, headPosition)])+'/32')
-        return pitches[find_nearest(pitches_coord, headPosition)] + '/16'
+        return pitches[find_nearest(pitches_coord, headPosition)] + '/32'
+    return ''
 
 
 def classifierA(objectWithoutStem, stems, staffLineSpacing, staffHeight, objectTop, pitches, pitches_coord, dots):
@@ -138,7 +134,7 @@ def classifierA(objectWithoutStem, stems, staffLineSpacing, staffHeight, objectT
     se = np.zeros((staffHeight+2, 3))
     se[:, se.shape[1]//2] = 1
     objectWithoutStem = binary_erosion(objectWithoutStem, se)
-    show_images([objectWithoutStem], ['eroded'])
+    # show_images([objectWithoutStem], ['eroded'])
     horizontal = objectWithoutStem[objectWithoutStem.shape[0] // 2 + 1, :]
     oneRuns = runs_of_ones_list(horizontal)
     note = ''
@@ -148,9 +144,9 @@ def classifierA(objectWithoutStem, stems, staffLineSpacing, staffHeight, objectT
     else:
         note = classifierC(objectWithoutStem, stems, staffLineSpacing,
                            objectTop, pitches, pitches_coord)
-    for i in range(dots):
-        note = note + '.'
-    print(note)
+    if note != '':
+        note = note + ('.' * dots)
+    return note
 
 
 def beamClassifier(object, objectWithoutStem, staffLineSpacing, staffHeight, objectTop, pitches, pitches_coord):
@@ -186,26 +182,27 @@ def beamClassifier(object, objectWithoutStem, staffLineSpacing, staffHeight, obj
             bboxes_centroids.append(region['centroid'])
         bboxes_centroids.sort(key=lambda x: x[1])
         bboxes.sort(key=lambda x: x[1])
-    pitch_list = []
-    duration_list = []
+    notes = []
     for centroid in bboxes_centroids:
         cent_y = centroid[0]
         cent_x = centroid[1]
         # top_staff_y = staffLines[top_block_staffLine[cnt_obj]]
         # print('pos : ' + str((cent_y - top_staff_y) // staffLineSpacing))
         headPosition = cent_y + objectTop
-        note_pitch = pitches[find_nearest(pitches_coord, headPosition)]
-        pitch_list.append(note_pitch)
+        notes.append(pitches[find_nearest(pitches_coord, headPosition)])
         if rectR_sum < rectL_sum:
-            note_dur = calc_duration(
-                cent_y, cent_x, objectWithoutStem, 'top', staffLineSpacing)
+            duration = calc_duration(cent_y, cent_x, objectWithoutStem, 'top', staffLineSpacing)
+            if duration == '':
+                notes = notes[:-1]
+            else:
+                notes[-1] = notes[-1] + '/' + duration
         else:
-            note_dur = calc_duration(
-                cent_y, cent_x, objectWithoutStem, 'bottom', staffLineSpacing)
-        duration_list.append(note_dur)
-
-    print('pitch_list : ' + str(pitch_list))
-    print('duration_list : ' + str(duration_list))
+            duration = calc_duration(cent_y, cent_x, objectWithoutStem, 'bottom', staffLineSpacing)
+            if duration == '':
+                notes = notes[:-1]
+            else:
+                notes[-1] = notes[-1] + '/' + duration
+    return notes
 
 
 def calc_duration(cent_y, cent_x, object, note_pos, staffLineSpacing):
@@ -228,15 +225,18 @@ def calc_duration(cent_y, cent_x, object, note_pos, staffLineSpacing):
         detection_line = np.array(
             object[max_y:object.shape[0], detection_line_col])
     mask = np.where(detection_line > 0, 1, 0)
+    if len(mask) == 0:
+        mask=np.zeros((1, 5)) # arbitrary empty mask
     runlengths, startpositions, values = rle(mask)
     num_startpositions = len(startpositions[np.nonzero(values)[0]])
     if num_startpositions == 1:
-        note_duration = 8
+        note_duration = '8'
     elif num_startpositions == 2:
-        note_duration = 16
+        note_duration = '16'
+    elif num_startpositions == 3:
+        note_duration = '32'
     else:
-        note_duration = 32
-
+        note_duration = ''
     return note_duration
 
 
@@ -248,18 +248,22 @@ def ChordsClassifier(objectWithoutStem, objectTop, staffLineSpacing, pitches, pi
                            return_num=True, connectivity=2)
     props = regionprops(label_img)
     heads = []
+    note = ''
     for prop in props:
         if(prop.area != 1):
             heads.append(prop)
     if len(heads) > 1:
-        show_images([eroded], ['chord'])
+        note = '{'
+        # show_images([eroded], ['chord'])
         for head in heads:
             # print('head centroid',head.centroid)
             headPosition = head.centroid[0] + objectTop
             # print('objecttop:', objectTop)
-            print(pitches[find_nearest(pitches_coord, headPosition)])
+            note = note + pitches[find_nearest(pitches_coord, headPosition)] + '/4,' 
             # print('pitches', pitches)
             # print('pitches_coordinates', pitches_coord)
             # print('headposition: ', headPosition)
             # print('````````````````````````````')
-    return len(heads) > 1
+    if note != '':
+        note = note[:-1] + '}'
+    return note
