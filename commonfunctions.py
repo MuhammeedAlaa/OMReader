@@ -228,6 +228,7 @@ def skew_angle_hough_transform(image):
     img_rotated = rotate(image, skew_angle, resize=True, mode='edge')
     return img_rotated
 
+
 def sort_contours_horizontally(cnts, method="left-to-right"):
     reverse = False
     i = 0
@@ -238,7 +239,7 @@ def sort_contours_horizontally(cnts, method="left-to-right"):
 
     boundingBoxes = [cv2.boundingRect(c) for c in cnts]
     (cnts, boundingBoxes) = zip(*sorted(zip(cnts, boundingBoxes),
-        key=lambda b:b[1][i], reverse=reverse))
+                                        key=lambda b: b[1][i], reverse=reverse))
     # return the list of sorted contours and bounding boxes
     return (cnts, boundingBoxes)
 
@@ -246,58 +247,66 @@ def sort_contours_horizontally(cnts, method="left-to-right"):
 def split_objects(img_thresh, img_objects, staffLines):
     height = img_objects.shape[0]
     count_blocks = len(staffLines) // 5
-    
-    if count_blocks > 1: 
-        padding_up = (staffLines[5] - staffLines[4]) // 2 
-        padding_down = padding_up 
+
+    if count_blocks > 1:
+        padding_up = (staffLines[5] - staffLines[4]) // 2
+        padding_down = padding_up
     else:
         padding_up = staffLines[0]
-        padding_down =  height - staffLines[4]
+        padding_down = height - staffLines[4]
 
     blocks_tops = []
     blocks = []
     blocks_orginal = []
-    for i in range(0 , count_blocks):
+    for i in range(0, count_blocks):
         if i == 0:
             blocks_tops.append(0)
-            blocks.append(img_objects[0: staffLines[i * 5 + 4] + padding_down,:])
-            blocks_orginal.append(img_thresh[0: staffLines[i * 5 + 4] + padding_down,:])
+            blocks.append(
+                img_objects[0: staffLines[i * 5 + 4] + padding_down, :])
+            blocks_orginal.append(
+                img_thresh[0: staffLines[i * 5 + 4] + padding_down, :])
         elif i == count_blocks - 1:
             blocks_tops.append(staffLines[i * 5] - padding_up)
-            blocks.append(img_objects[staffLines[i * 5] - padding_up: height ,:])            
-            blocks_orginal.append(img_thresh[staffLines[i * 5] - padding_up: height ,:])            
+            blocks.append(
+                img_objects[staffLines[i * 5] - padding_up: height, :])
+            blocks_orginal.append(
+                img_thresh[staffLines[i * 5] - padding_up: height, :])
         else:
             blocks_tops.append(staffLines[i * 5] - padding_up)
-            blocks.append(img_objects[staffLines[i * 5] - padding_up: staffLines[i * 5 + 4] + padding_down,:])
-            blocks_orginal.append(img_thresh[staffLines[i * 5] - padding_up: staffLines[i * 5 + 4] + padding_down,:])
-    
+            blocks.append(
+                img_objects[staffLines[i * 5] - padding_up: staffLines[i * 5 + 4] + padding_down, :])
+            blocks_orginal.append(
+                img_thresh[staffLines[i * 5] - padding_up: staffLines[i * 5 + 4] + padding_down, :])
+
     staffHeight = staffLines[4] - staffLines[3]
-    
+
     objects = []
-    
-    for i  in  range(count_blocks):
+
+    for i in range(count_blocks):
         show_images([blocks[i]])
-        contours, hier = cv2.findContours(255 - blocks[i], cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+        contours, hier = cv2.findContours(
+            255 - blocks[i], cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
         cnt = []
-        for j in range (0, len(contours)):
-            if hier[0,j,3] == -1:
+        for j in range(0, len(contours)):
+            if hier[0, j, 3] == -1:
                 cnt.append(contours[j])
-        cnt, boxes_sorted = sort_contours_horizontally(cnt)        
+        cnt, boxes_sorted = sort_contours_horizontally(cnt)
         for c in cnt:
-            Xmin = int(np.min(c[:,0, 0]))
-            Xmax = int(np.max(c[:,0, 0]))
-            Ymin = int(np.min(c[:,0, 1]))
-            Ymax = int(np.max(c[:,0, 1]))
+            Xmin = int(np.min(c[:, 0, 0]))
+            Xmax = int(np.max(c[:, 0, 0]))
+            Ymin = int(np.min(c[:, 0, 1]))
+            Ymax = int(np.max(c[:, 0, 1]))
 
             object_width = Xmax - Xmin
             object_height = Ymax - Ymin
-            if object_width > staffHeight/2 and object_height > 3*staffHeight/4: 
+            if object_width > staffHeight/2 and object_height > 3*staffHeight/4:
                 current_obj = blocks[i][Ymin:Ymax, Xmin:Xmax]
-                objects.append((current_obj, blocks_tops[i]+Ymin, i))  
-            elif staffHeight/4<=object_height<=staffHeight/2 and staffHeight/4<=object_width<=staffHeight/2:
-                point_img = np.ones((20,20))
-                point_img[7:12, 7:12] = 0
-                objects.append((point_img, blocks_tops[i]+Ymin, i)) 
+                objects.append((current_obj, blocks_tops[i]+Ymin, i, 0))
+            elif staffHeight/4 <= object_height <= staffHeight/2 and staffHeight/4 <= object_width <= staffHeight/2:
+                lastObject = objects.pop()
+                objects.append((
+                    lastObject[0], lastObject[1], lastObject[2], lastObject[3] + 1))
+
     return objects
 
 
@@ -313,16 +322,17 @@ def read_temp():
             templates[filename[0:-4]] = image
     return templates
 
+
 def check_temp(obj, tmp, accuracy):
     #show_images([tmp, obj], ["Template", "Object"])
     try:
         sift = cv2.xfeatures2d.SIFT_create()
-        kp1, des1 = sift.detectAndCompute(tmp,None)
-        kp2, des2 = sift.detectAndCompute(obj,None)
+        kp1, des1 = sift.detectAndCompute(tmp, None)
+        kp2, des2 = sift.detectAndCompute(obj, None)
         bf = cv2.BFMatcher()
-        matches = bf.knnMatch(des1,des2, k=2)
+        matches = bf.knnMatch(des1, des2, k=2)
         good = []
-        for m,n in matches:
+        for m, n in matches:
             if m.distance < accuracy*n.distance:
                 good.append([m])
         p = len(good)/(min(len(kp1), len(kp2)))
@@ -332,11 +342,12 @@ def check_temp(obj, tmp, accuracy):
         #print("percentage = 0")
         return 0
 
+
 def check_all_templates(obj, templates):
     show_images([obj])
     best_solution = 0
-    label = None   
-    for tmp in templates: 
+    label = None
+    for tmp in templates:
         result = check_temp(obj, templates[tmp], 0.3)
         if result > best_solution:
             best_solution = result
@@ -348,24 +359,28 @@ def check_all_templates(obj, templates):
         print("Unmatched")
         return None
 
+
 def read_temps_versions(tmp_name):
     directory = os.fsencode("temp/"+tmp_name)
     templates = {}
     for file in os.listdir(directory):
         filename = os.fsdecode(file)
         if filename.endswith(".png") or filename.endswith(".jpg"):
-            image = rgb2gray(io.imread(os.path.join('temp/'+tmp_name, filename)))
+            image = rgb2gray(
+                io.imread(os.path.join('temp/'+tmp_name, filename)))
             if image.dtype != "uint8":
                 image = (image * 255).astype("uint8")
             templates[filename[0:-4]] = image
     return templates
 
+
 def check_match(dictionary_temp, img):
     count = 0
     for im_temp in dictionary_temp:
         if check_temp(dictionary_temp[im_temp], img, 0.5) != 0:
-            count += 1 
+            count += 1
     return count
+
 
 def classify_accidentals(obj, templates, staffHeight):
     dictionary_matches = {}
@@ -379,21 +394,22 @@ def classify_accidentals(obj, templates, staffHeight):
     dictionary_matches["full_note"] = check_match(templates[7], obj[0])
     dictionary_matches["natural"] = check_match(templates[8], obj[0])
     dictionary_matches["#"] = check_match(templates[9], obj[0])
-    #for mat in dictionary_matches:
+    # for mat in dictionary_matches:
     #    print(mat + " = {}".format(dictionary_matches[mat]))
-    best_match = max(dictionary_matches.items(), key=operator.itemgetter(1))[0]   
-    #print(best_match)
+    best_match = max(dictionary_matches.items(), key=operator.itemgetter(1))[0]
+    # print(best_match)
     if dictionary_matches[best_match] == 0:
         return "full_note"
     if best_match == "&&" or best_match == "&":
         if dictionary_matches["&&"] >= dictionary_matches["&"]:
             return "&&"
-        return "&" 
+        return "&"
     return best_match
+
 
 def read_all_templates():
     temps_2 = read_temps_versions("2")
-    temps_3 = read_temps_versions("3") 
+    temps_3 = read_temps_versions("3")
     temps_4 = read_temps_versions("4")
     temps_8 = read_temps_versions("8")
     temps_double_flat = read_temps_versions("double_flat")
@@ -403,12 +419,12 @@ def read_all_templates():
     temps_natural = read_temps_versions("natural")
     temps_sharp = read_temps_versions("sharp")
 
-    templates = [temps_2, temps_3, temps_4, temps_8, temps_double_flat, temps_double_sharp, temps_flat, temps_full_note,                            temps_natural, temps_sharp]
+    templates = [temps_2, temps_3, temps_4, temps_8, temps_double_flat, temps_double_sharp,
+                 temps_flat, temps_full_note,                            temps_natural, temps_sharp]
     return templates
 
 
-
-# templates = read_all_templates()    
+# templates = read_all_templates()
 # point_img = np.ones((20,20))
 # point_img[7:12, 7:12] = 0
 # for obj in objects:
@@ -416,6 +432,5 @@ def read_all_templates():
 #            show_images([obj[0]])
 #            if np.array_equal(obj[0],point_img):
 #                print(".")
-#            else:    
+#            else:
 #                print(classify_accidentals(obj, templates, staffHeight))
-       
