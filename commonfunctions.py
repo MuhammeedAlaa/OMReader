@@ -14,7 +14,7 @@ from scipy.stats import mode
 from scipy import fftpack
 import math
 
-from skimage.util import random_noise, pad
+from skimage.util import random_noise, pad, img_as_ubyte
 from skimage.filters import median, gaussian
 from skimage.feature import canny
 from skimage.transform import hough_line, hough_line_peaks
@@ -225,7 +225,7 @@ def skew_angle_hough_transform(image):
     accum, angles, dists = hough_line_peaks(h, theta, d)
     most_common_angle = mode(np.around(angles, decimals=2))[0]
     skew_angle = np.rad2deg(most_common_angle - np.pi/2)
-    img_rotated = rotate(image, skew_angle, resize=True, mode='constant', cval=255)
+    img_rotated = rotate(image, skew_angle, resize=True, mode='edge')
     return img_rotated
 
 def sort_contours_horizontally(cnts, method="left-to-right"):
@@ -349,12 +349,12 @@ def check_all_templates(obj, templates):
         return None
 
 def read_temps_versions(tmp_name):
-    directory = os.fsencode("../temp/"+tmp_name)
+    directory = os.fsencode("temp/"+tmp_name)
     templates = {}
     for file in os.listdir(directory):
         filename = os.fsdecode(file)
         if filename.endswith(".png") or filename.endswith(".jpg"):
-            image = rgb2gray(io.imread(os.path.join('../temp/'+tmp_name, filename)))
+            image = rgb2gray(io.imread(os.path.join('temp/'+tmp_name, filename)))
             if image.dtype != "uint8":
                 image = (image * 255).astype("uint8")
             templates[filename[0:-4]] = image
