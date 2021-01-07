@@ -23,7 +23,8 @@ image_rotated = (image_rotated * 255).astype(np.uint8)
 # image binarization
 binary = adaptiveThresh(image_rotated, t=15, div=8)
 show_images([binary])
-img_staffLines_removed , staffLines, staffLineSpacing, staffHeight = staffLineRemoval(binary, 1)
+img_staffLines_removed, staffLines, staffLineSpacing, staffHeight = staffLineRemoval(
+    binary, 1)
 
 start_x = get_start_x(binary, len(staffLines), staffHeight)
 img_clipped = img_staffLines_removed[:, start_x:img_staffLines_removed.shape[1]]
@@ -32,31 +33,34 @@ binary = binary[:, start_x:img_staffLines_removed.shape[1]]
 
 objects = split_objects(binary, img_clipped, staffLines)
 
-templates = read_all_templates()   
-point_img = np.ones((20,20))
+templates = read_all_templates()
+point_img = np.ones((20, 20))
 point_img[7:12, 7:12] = 0
 
 sameBlock = objects[0][2]
 pitches = []
 pitches_coord = []
 pitches, pitches_coord = getPitchesCoordinates(
-        staffLineSpacing, staffLines, sameBlock)
+    staffLineSpacing, staffLines, sameBlock)
+
 
 print(staffLines)
-for object, top, blockNumber in objects:
+for object, top, blockNumber, _ in objects:
     if sameBlock != blockNumber:
         sameBlock = blockNumber
         pitches, pitches_coord = getPitchesCoordinates(
-        staffLineSpacing, staffLines, blockNumber)
+            staffLineSpacing, staffLines, blockNumber)
     if len(object) < 3.5*staffLineSpacing:
         show_images([object])
         if np.array_equal(object, point_img):
             # print(".")
             lbl = '.'
-        else:    
-            lbl = classify_accidentals((object, top, blockNumber), templates, staffLineSpacing)
+        else:
+            lbl = classify_accidentals(
+                (object, top, blockNumber), templates, staffLineSpacing)
             if lbl == 'full_note':
-                lbl = pitches[find_nearest(pitches_coord, top + len(object)/2)] + '/1'
+                lbl = pitches[find_nearest(
+                    pitches_coord, top + len(object)/2)] + '/1'
         print(lbl)
         continue
     testNoStem, stems = stemRemoval(object, staffLineSpacing)
@@ -66,8 +70,10 @@ for object, top, blockNumber in objects:
         continue
     elif len(stems) == 1:
         # show_images([testNoStem])
-        if ChordsClassifier(testNoStem, top,staffLineSpacing, pitches, pitches_coord):
+        if ChordsClassifier(testNoStem, top, staffLineSpacing, pitches, pitches_coord):
             continue
-        classifierA(testNoStem, stems, staffLineSpacing, staffHeight, top, pitches, pitches_coord) 
+        classifierA(testNoStem, stems, staffLineSpacing,
+                    staffHeight, top, pitches, pitches_coord)
     else:
-        beamClassifier(object, testNoStem, staffLineSpacing, staffHeight, top, pitches, pitches_coord)
+        beamClassifier(object, testNoStem, staffLineSpacing,
+                       staffHeight, top, pitches, pitches_coord)

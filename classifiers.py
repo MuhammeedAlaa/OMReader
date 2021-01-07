@@ -80,11 +80,15 @@ def classifierB(objectWithoutStem, staffLineSpacing, objectTop, pitches, pitches
     whiteRunHeight = runlengths[np.nonzero(values)[0]]
     whiteRunPositions = startpositions[np.nonzero(values)[0]]
     if len(whiteRunHeight) == 2:
-        headPosition = (whiteRunPositions[0] + (whiteRunPositions[1] + whiteRunHeight[1])) // 2 + objectTop
-        print(str(pitches[find_nearest(pitches_coord, headPosition)])+'/2')
+        headPosition = (
+            whiteRunPositions[0] + (whiteRunPositions[1] + whiteRunHeight[1])) // 2 + objectTop
+        # print(str(pitches[find_nearest(pitches_coord, headPosition)])+'/2')
+        return pitches[find_nearest(pitches_coord, headPosition)] + '/2'
     elif len(whiteRunHeight) == 1:
-        headPosition = whiteRunPositions[0] + whiteRunHeight[0] // 2 + objectTop
-        print(str(pitches[find_nearest(pitches_coord, headPosition)])+'/4')
+        headPosition = whiteRunPositions[0] + \
+            whiteRunHeight[0] // 2 + objectTop
+        # print(str(pitches[find_nearest(pitches_coord, headPosition)])+'/4')
+        return pitches[find_nearest(pitches_coord, headPosition)] + '/4'
 
 
 def classifierC(objectWithoutStem, stems, staffLineSpacing, objectTop, pitches, pitches_coord):
@@ -95,31 +99,41 @@ def classifierC(objectWithoutStem, stems, staffLineSpacing, objectTop, pitches, 
         verticalLeftStem = objectWithoutStem[:, stemPos - 1]
     if stemPos + stemWidth + 1 < objectWithoutStem.shape[1]:
         verticalRightStem = objectWithoutStem[:, stemPos + stemWidth + 1]
-    runlengthsLeftStem, startpositionsLeftStem, valuesLeftStem = rle(verticalLeftStem)
-    runlengthsRightStem, startpositionsRightStem, valuesRightStem = rle(verticalRightStem)
+    runlengthsLeftStem, startpositionsLeftStem, valuesLeftStem = rle(
+        verticalLeftStem)
+    runlengthsRightStem, startpositionsRightStem, valuesRightStem = rle(
+        verticalRightStem)
     whiteRunHeightLeftStem = runlengthsLeftStem[np.nonzero(valuesLeftStem)[0]]
-    whiteRunPositionsLeftStem = startpositionsLeftStem[np.nonzero(valuesLeftStem)[0]]
-    whiteRunHeightRightStem = runlengthsRightStem[np.nonzero(valuesRightStem)[0]]
-    whiteRunPositionsRightStem = startpositionsRightStem[np.nonzero(valuesRightStem)[0]]
+    whiteRunPositionsLeftStem = startpositionsLeftStem[np.nonzero(valuesLeftStem)[
+        0]]
+    whiteRunHeightRightStem = runlengthsRightStem[np.nonzero(valuesRightStem)[
+        0]]
+    whiteRunPositionsRightStem = startpositionsRightStem[np.nonzero(valuesRightStem)[
+        0]]
     oneRuns = max(len(whiteRunHeightLeftStem), len(whiteRunHeightRightStem))
     headPosition = 0
     if len(whiteRunHeightLeftStem) == 0:
         oneRuns = oneRuns - 1
-        headPosition = whiteRunPositionsRightStem[0] + whiteRunHeightRightStem[0] // 2 + objectTop
+        headPosition = whiteRunPositionsRightStem[0] + \
+            whiteRunHeightRightStem[0] // 2 + objectTop
     else:
-        headPosition = whiteRunPositionsLeftStem[-1] + whiteRunHeightLeftStem[-1] // 2 + objectTop
+        headPosition = whiteRunPositionsLeftStem[-1] + \
+            whiteRunHeightLeftStem[-1] // 2 + objectTop
     if oneRuns == 1:
-        print(str(pitches[find_nearest(pitches_coord, headPosition)])+'/8')
+        # print(str(pitches[find_nearest(pitches_coord, headPosition)])+'/8')
+        return pitches[find_nearest(pitches_coord, headPosition)] + '/8'
     elif oneRuns == 2:
-        print(str(pitches[find_nearest(pitches_coord, headPosition)])+'/16')
+        # print(str(pitches[find_nearest(pitches_coord, headPosition)])+'/16')
+        return pitches[find_nearest(pitches_coord, headPosition)] + '/16'
     elif oneRuns == 3:
-        print(str(pitches[find_nearest(pitches_coord, headPosition)])+'/32')
+        # print(str(pitches[find_nearest(pitches_coord, headPosition)])+'/32')
+        return pitches[find_nearest(pitches_coord, headPosition)] + '/16'
 
 
-def classifierA(objectWithoutStem, stems, staffLineSpacing, staffHeight, objectTop, pitches, pitches_coord):
+def classifierA(objectWithoutStem, stems, staffLineSpacing, staffHeight, objectTop, pitches, pitches_coord, dots):
     objectWithoutStem = (255-objectWithoutStem)/255
-    
-    # make structuring element with height a little more than staffheight and width 
+
+    # make structuring element with height a little more than staffheight and width
     # of three pixels with ones in the middle column to remove the ledgers
     se = np.zeros((staffHeight+2, 3))
     se[:, se.shape[1]//2] = 1
@@ -127,12 +141,16 @@ def classifierA(objectWithoutStem, stems, staffLineSpacing, staffHeight, objectT
     show_images([objectWithoutStem], ['eroded'])
     horizontal = objectWithoutStem[objectWithoutStem.shape[0] // 2 + 1, :]
     oneRuns = runs_of_ones_list(horizontal)
+    note = ''
     if len(oneRuns) == 0:
-        classifierB(objectWithoutStem, staffLineSpacing,
-                    objectTop, pitches, pitches_coord)
+        note = classifierB(objectWithoutStem, staffLineSpacing,
+                           objectTop, pitches, pitches_coord)
     else:
-        classifierC(objectWithoutStem, stems, staffLineSpacing,
-                    objectTop, pitches, pitches_coord)
+        note = classifierC(objectWithoutStem, stems, staffLineSpacing,
+                           objectTop, pitches, pitches_coord)
+    for i in range(dots):
+        note = note + '.'
+    print(note)
 
 
 def beamClassifier(object, objectWithoutStem, staffLineSpacing, staffHeight, objectTop, pitches, pitches_coord):
@@ -143,13 +161,14 @@ def beamClassifier(object, objectWithoutStem, staffLineSpacing, staffHeight, obj
     rectL_sum = np.sum(object[:, :staffLineSpacing//2])
     rectR_sum = np.sum(object[:, width-(staffLineSpacing//2): width])
     # remove ledgers
-    # make structuring element with height a little more than staffheight and width 
+    # make structuring element with height a little more than staffheight and width
     # of three pixels with ones in the middle column to remove the ledgers
     se = np.zeros((staffHeight+2, 3))
     se[:, se.shape[1]//2] = 1
     # se = np.ones((2 * staffHeight, staffHeight))
     objectWithoutStem = binary_erosion(objectWithoutStem, se)
-    labeled_img, num_labels = label(objectWithoutStem, background=0, return_num=True, connectivity=2)
+    labeled_img, num_labels = label(
+        objectWithoutStem, background=0, return_num=True, connectivity=2)
     regions = regionprops(labeled_img)
     bboxes = []
     bboxes_centroids = []
@@ -163,10 +182,10 @@ def beamClassifier(object, objectWithoutStem, staffLineSpacing, staffHeight, obj
         bbox_width = max_col - min_col
         bbox_height = max_row - min_row
         if (bbox_height < 1.5 * staffLineSpacing) and (bbox_width < 1.5 * staffLineSpacing):
-                    bboxes.append(rect_endpoints)
-                    bboxes_centroids.append(region['centroid'])
-        bboxes_centroids.sort(key=lambda x:x[1])
-        bboxes.sort(key=lambda x:x[1])
+            bboxes.append(rect_endpoints)
+            bboxes_centroids.append(region['centroid'])
+        bboxes_centroids.sort(key=lambda x: x[1])
+        bboxes.sort(key=lambda x: x[1])
     pitch_list = []
     duration_list = []
     for centroid in bboxes_centroids:
@@ -178,30 +197,36 @@ def beamClassifier(object, objectWithoutStem, staffLineSpacing, staffHeight, obj
         note_pitch = pitches[find_nearest(pitches_coord, headPosition)]
         pitch_list.append(note_pitch)
         if rectR_sum < rectL_sum:
-            note_dur = calc_duration(cent_y, cent_x, objectWithoutStem, 'top', staffLineSpacing)
+            note_dur = calc_duration(
+                cent_y, cent_x, objectWithoutStem, 'top', staffLineSpacing)
         else:
-            note_dur = calc_duration(cent_y, cent_x, objectWithoutStem, 'bottom', staffLineSpacing)
+            note_dur = calc_duration(
+                cent_y, cent_x, objectWithoutStem, 'bottom', staffLineSpacing)
         duration_list.append(note_dur)
 
     print('pitch_list : ' + str(pitch_list))
     print('duration_list : ' + str(duration_list))
 
+
 def calc_duration(cent_y, cent_x, object, note_pos, staffLineSpacing):
     if note_pos == 'bottom':
-        min_y = int(cent_y - staffLineSpacing) # to get to the point above the note head
+        # to get to the point above the note head
+        min_y = int(cent_y - staffLineSpacing)
         if int(cent_x + 1.5 * staffLineSpacing) >= object.shape[1]:
             detection_line_col = int(cent_x - 1.5 * staffLineSpacing)
         else:
             detection_line_col = int(cent_x + 1.5 * staffLineSpacing)
         detection_line = np.array(object[0:min_y, detection_line_col], ndmin=1)
-        
+
     else:
-        max_y = int(cent_y + 1.5 * staffLineSpacing) # to get to the point below the note head
+        # to get to the point below the note head
+        max_y = int(cent_y + 1.5 * staffLineSpacing)
         if int(cent_x - staffLineSpacing) <= 0:
-            detection_line_col =  int(cent_x + 1.5 * staffLineSpacing)
+            detection_line_col = int(cent_x + 1.5 * staffLineSpacing)
         else:
             detection_line_col = int(cent_x - 1.5 * staffLineSpacing)
-        detection_line = np.array(object[max_y:object.shape[0], detection_line_col])
+        detection_line = np.array(
+            object[max_y:object.shape[0], detection_line_col])
     mask = np.where(detection_line > 0, 1, 0)
     runlengths, startpositions, values = rle(mask)
     num_startpositions = len(startpositions[np.nonzero(values)[0]])
@@ -211,8 +236,9 @@ def calc_duration(cent_y, cent_x, object, note_pos, staffLineSpacing):
         note_duration = 16
     else:
         note_duration = 32
-    
+
     return note_duration
+
 
 def ChordsClassifier(objectWithoutStem, objectTop, staffLineSpacing, pitches, pitches_coord):
     se = disk((staffLineSpacing-2) // 2 - 1)
