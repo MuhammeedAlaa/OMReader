@@ -26,7 +26,7 @@ from skimage import exposure
 from skimage.morphology import binary_closing, binary_erosion, disk
 from skimage.draw import ellipse
 from skimage.transform import hough_circle, hough_circle_peaks
-
+import operator
 
 
 def order_points(pts):
@@ -243,8 +243,7 @@ def sort_contours_horizontally(cnts, method="left-to-right"):
     return (cnts, boundingBoxes)
 
 
-def split_objects(img_thresh):
-    img_objects , staffLines, staffLineThickness = staffLineRemoval(img_thresh, 1)
+def split_objects(img_thresh, img_objects, staffLines):
     height = img_objects.shape[0]
     count_blocks = len(staffLines) // 5
     
@@ -255,16 +254,20 @@ def split_objects(img_thresh):
         padding_up = staffLines[0]
         padding_down =  height - staffLines[4]
 
+    blocks_tops = []
     blocks = []
     blocks_orginal = []
     for i in range(0 , count_blocks):
         if i == 0:
+            blocks_tops.append(0)
             blocks.append(img_objects[0: staffLines[i * 5 + 4] + padding_down,:])
             blocks_orginal.append(img_thresh[0: staffLines[i * 5 + 4] + padding_down,:])
         elif i == count_blocks - 1:
+            blocks_tops.append(staffLines[i * 5] - padding_up)
             blocks.append(img_objects[staffLines[i * 5] - padding_up: height ,:])            
             blocks_orginal.append(img_thresh[staffLines[i * 5] - padding_up: height ,:])            
         else:
+            blocks_tops.append(staffLines[i * 5] - padding_up)
             blocks.append(img_objects[staffLines[i * 5] - padding_up: staffLines[i * 5 + 4] + padding_down,:])
             blocks_orginal.append(img_thresh[staffLines[i * 5] - padding_up: staffLines[i * 5 + 4] + padding_down,:])
     
@@ -273,6 +276,7 @@ def split_objects(img_thresh):
     objects = []
     
     for i  in  range(count_blocks):
+        show_images([blocks[i]])
         contours, hier = cv2.findContours(255 - blocks[i], cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
         cnt = []
         for j in range (0, len(contours)):
@@ -287,13 +291,131 @@ def split_objects(img_thresh):
 
             object_width = Xmax - Xmin
             object_height = Ymax - Ymin
-            if object_width > staffHeight//2: 
+            if object_width > staffHeight/2 and object_height > 3*staffHeight/4: 
                 current_obj = blocks[i][Ymin:Ymax, Xmin:Xmax]
-                objects.append(current_obj)  
-            elif object_height <= staffHeight//2:
-                point_img = np.ones((blocks[i].shape[0],15))
-                point_img[blocks[i].shape[0]//2-3:blocks[i].shape[0]//2+3, 5:10] = 0
-                objects.append(point_img)   
+                objects.append((current_obj, blocks_tops[i]+Ymin, i))  
+            elif staffHeight/4<=object_height<=staffHeight/2 and staffHeight/4<=object_width<=staffHeight/2:
+                point_img = np.ones((20,20))
+                point_img[7:12, 7:12] = 0
+                objects.append((point_img, blocks_tops[i]+Ymin, i)) 
     return objects
 
 
+def read_temp():
+    directory = os.fsencode("../temp")
+    templates = {}
+    for file in os.listdir(directory):
+        filename = os.fsdecode(file)
+        if filename.endswith(".png") or filename.endswith(".jpg"):
+            image = rgb2gray(io.imread(os.path.join('../temp/', filename)))
+            if image.dtype != "uint8":
+                image = (image * 255).astype("uint8")
+            templates[filename[0:-4]] = image
+    return templates
+
+def check_temp(obj, tmp, accuracy):
+    #show_images([tmp, obj], ["Template", "Object"])
+    try:
+        sift = cv2.xfeatures2d.SIFT_create()
+        kp1, des1 = sift.detectAndCompute(tmp,None)
+        kp2, des2 = sift.detectAndCompute(obj,None)
+        bf = cv2.BFMatcher()
+        matches = bf.knnMatch(des1,des2, k=2)
+        good = []
+        for m,n in matches:
+            if m.distance < accuracy*n.distance:
+                good.append([m])
+        p = len(good)/(min(len(kp1), len(kp2)))
+        #print("percentage = {}".format(p*100))
+        return p*100
+    except:
+        #print("percentage = 0")
+        return 0
+
+def check_all_templates(obj, templates):
+    show_images([obj])
+    best_solution = 0
+    label = None   
+    for tmp in templates: 
+        result = check_temp(obj, templates[tmp], 0.3)
+        if result > best_solution:
+            best_solution = result
+            label = tmp
+    if (best_solution > 0) and (label is not None):
+        print("Matched with {}".format(label))
+        return label
+    else:
+        print("Unmatched")
+        return None
+
+def read_temps_versions(tmp_name):
+    directory = os.fsencode("../temp/"+tmp_name)
+    templates = {}
+    for file in os.listdir(directory):
+        filename = os.fsdecode(file)
+        if filename.endswith(".png") or filename.endswith(".jpg"):
+            image = rgb2gray(io.imread(os.path.join('../temp/'+tmp_name, filename)))
+            if image.dtype != "uint8":
+                image = (image * 255).astype("uint8")
+            templates[filename[0:-4]] = image
+    return templates
+
+def check_match(dictionary_temp, img):
+    count = 0
+    for im_temp in dictionary_temp:
+        if check_temp(dictionary_temp[im_temp], img, 0.5) != 0:
+            count += 1 
+    return count
+
+def classify_accidentals(obj, templates, staffHeight):
+    dictionary_matches = {}
+    dictionary_matches["2"] = check_match(templates[0], obj[0])
+    dictionary_matches["3"] = check_match(templates[1], obj[0])
+    dictionary_matches["4"] = check_match(templates[2], obj[0])
+    dictionary_matches["8"] = check_match(templates[3], obj[0])
+    dictionary_matches["&&"] = check_match(templates[4], obj[0])
+    dictionary_matches["##"] = check_match(templates[5], obj[0])
+    dictionary_matches["&"] = check_match(templates[6], obj[0])
+    dictionary_matches["full_note"] = check_match(templates[7], obj[0])
+    dictionary_matches["natural"] = check_match(templates[8], obj[0])
+    dictionary_matches["#"] = check_match(templates[9], obj[0])
+    #for mat in dictionary_matches:
+    #    print(mat + " = {}".format(dictionary_matches[mat]))
+    best_match = max(dictionary_matches.items(), key=operator.itemgetter(1))[0]   
+    #print(best_match)
+    if dictionary_matches[best_match] == 0:
+        return "full_note"
+    if best_match == "&&" or best_match == "&":
+        if dictionary_matches["&&"] >= dictionary_matches["&"]:
+            return "&&"
+        return "&" 
+    return best_match
+
+def read_all_templates():
+    temps_2 = read_temps_versions("2")
+    temps_3 = read_temps_versions("3") 
+    temps_4 = read_temps_versions("4")
+    temps_8 = read_temps_versions("8")
+    temps_double_flat = read_temps_versions("double_flat")
+    temps_double_sharp = read_temps_versions("double_sharp")
+    temps_flat = read_temps_versions("flat")
+    temps_full_note = read_temps_versions("full_note")
+    temps_natural = read_temps_versions("natural")
+    temps_sharp = read_temps_versions("sharp")
+
+    templates = [temps_2, temps_3, temps_4, temps_8, temps_double_flat, temps_double_sharp, temps_flat, temps_full_note,                            temps_natural, temps_sharp]
+    return templates
+
+
+
+# templates = read_all_templates()    
+# point_img = np.ones((20,20))
+# point_img[7:12, 7:12] = 0
+# for obj in objects:
+#        if len(obj[0]) < 3.5*staffHeight:
+#            show_images([obj[0]])
+#            if np.array_equal(obj[0],point_img):
+#                print(".")
+#            else:    
+#                print(classify_accidentals(obj, templates, staffHeight))
+       
