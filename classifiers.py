@@ -10,31 +10,6 @@ import cv2
 from commonfunctions import show_images
 
 
-def ChordsClassifier(objectWithoutStem, objectTop, staffLineSpacing, pitches, pitches_coord):
-    se = disk((staffLineSpacing-2) // 2 - 1)
-    objectWithoutStem = np.copy(objectWithoutStem)
-    eroded = binary_erosion((255 - objectWithoutStem) / 255, se)
-    label_img, num = label(eroded, background=0,
-                           return_num=True, connectivity=2)
-    props = regionprops(label_img)
-    heads = []
-    for prop in props:
-        if(prop.area != 1):
-            heads.append(prop)
-    if len(heads) > 1:
-        show_images([eroded], ['chord'])
-        for head in heads:
-            # print('head centroid',head.centroid)
-            headPosition = head.centroid[0] + objectTop
-            # print('objecttop:', objectTop)
-            print(pitches[find_nearest(pitches_coord, headPosition)])
-            # print('pitches', pitches)
-            # print('pitches_coordinates', pitches_coord)
-            # print('headposition: ', headPosition)
-            # print('````````````````````````````')
-    return len(heads) > 1
-
-
 def find_nearest(array, value):
     idx = np.searchsorted(array, value, side="left")
     if idx > 0 and (idx == len(array) or math.fabs(value - array[idx-1]) < math.fabs(value - array[idx])):
@@ -158,3 +133,107 @@ def classifierA(objectWithoutStem, stems, staffLineSpacing, staffHeight, objectT
     else:
         classifierC(objectWithoutStem, stems, staffLineSpacing,
                     objectTop, pitches, pitches_coord)
+
+
+def beamClassifier(object, objectWithoutStem, staffLineSpacing, staffHeight, objectTop, pitches, pitches_coord):
+    objectWithoutStem = (255-objectWithoutStem)/255
+    # check if it the beam is above or below the note heads
+    height, width = objectWithoutStem.shape
+    object = 255 - object
+    rectL_sum = np.sum(object[:, :staffLineSpacing//2])
+    rectR_sum = np.sum(object[:, width-(staffLineSpacing//2): width])
+    # remove ledgers
+    # make structuring element with height a little more than staffheight and width 
+    # of three pixels with ones in the middle column to remove the ledgers
+    se = np.zeros((staffHeight+2, 3))
+    se[:, se.shape[1]//2] = 1
+    # se = np.ones((2 * staffHeight, staffHeight))
+    objectWithoutStem = binary_erosion(objectWithoutStem, se)
+    labeled_img, num_labels = label(objectWithoutStem, background=0, return_num=True, connectivity=2)
+    regions = regionprops(labeled_img)
+    bboxes = []
+    bboxes_centroids = []
+    for region in regions:
+        rect_endpoints = region['bbox']
+        # get bounding box coordinates
+        min_row = rect_endpoints[0]
+        min_col = rect_endpoints[1]
+        max_row = rect_endpoints[2]
+        max_col = rect_endpoints[3]
+        bbox_width = max_col - min_col
+        bbox_height = max_row - min_row
+        if (bbox_height < 1.5 * staffLineSpacing) and (bbox_width < 1.5 * staffLineSpacing):
+                    bboxes.append(rect_endpoints)
+                    bboxes_centroids.append(region['centroid'])
+        bboxes_centroids.sort(key=lambda x:x[1])
+        bboxes.sort(key=lambda x:x[1])
+    pitch_list = []
+    duration_list = []
+    for centroid in bboxes_centroids:
+        cent_y = centroid[0]
+        cent_x = centroid[1]
+        # top_staff_y = staffLines[top_block_staffLine[cnt_obj]]
+        # print('pos : ' + str((cent_y - top_staff_y) // staffLineSpacing))
+        headPosition = cent_y + objectTop
+        note_pitch = pitches[find_nearest(pitches_coord, headPosition)]
+        pitch_list.append(note_pitch)
+        if rectR_sum < rectL_sum:
+            note_dur = calc_duration(cent_y, cent_x, objectWithoutStem, 'top', staffLineSpacing)
+        else:
+            note_dur = calc_duration(cent_y, cent_x, objectWithoutStem, 'bottom', staffLineSpacing)
+        duration_list.append(note_dur)
+
+    print('pitch_list : ' + str(pitch_list))
+    print('duration_list : ' + str(duration_list))
+
+def calc_duration(cent_y, cent_x, object, note_pos, staffLineSpacing):
+    if note_pos == 'bottom':
+        min_y = int(cent_y - staffLineSpacing) # to get to the point above the note head
+        if int(cent_x + 1.5 * staffLineSpacing) >= object.shape[1]:
+            detection_line_col = int(cent_x - 1.5 * staffLineSpacing)
+        else:
+            detection_line_col = int(cent_x + 1.5 * staffLineSpacing)
+        detection_line = np.array(object[0:min_y, detection_line_col], ndmin=1)
+        
+    else:
+        max_y = int(cent_y + 1.5 * staffLineSpacing) # to get to the point below the note head
+        if int(cent_x - staffLineSpacing) <= 0:
+            detection_line_col =  int(cent_x + 1.5 * staffLineSpacing)
+        else:
+            detection_line_col = int(cent_x - 1.5 * staffLineSpacing)
+        detection_line = np.array(object[max_y:object.shape[0], detection_line_col])
+    mask = np.where(detection_line > 0, 1, 0)
+    runlengths, startpositions, values = rle(mask)
+    num_startpositions = len(startpositions[np.nonzero(values)[0]])
+    if num_startpositions == 1:
+        note_duration = 8
+    elif num_startpositions == 2:
+        note_duration = 16
+    else:
+        note_duration = 32
+    
+    return note_duration
+
+def ChordsClassifier(objectWithoutStem, objectTop, staffLineSpacing, pitches, pitches_coord):
+    se = disk((staffLineSpacing-2) // 2 - 1)
+    objectWithoutStem = np.copy(objectWithoutStem)
+    eroded = binary_erosion((255 - objectWithoutStem) / 255, se)
+    label_img, num = label(eroded, background=0,
+                           return_num=True, connectivity=2)
+    props = regionprops(label_img)
+    heads = []
+    for prop in props:
+        if(prop.area != 1):
+            heads.append(prop)
+    if len(heads) > 1:
+        show_images([eroded], ['chord'])
+        for head in heads:
+            # print('head centroid',head.centroid)
+            headPosition = head.centroid[0] + objectTop
+            # print('objecttop:', objectTop)
+            print(pitches[find_nearest(pitches_coord, headPosition)])
+            # print('pitches', pitches)
+            # print('pitches_coordinates', pitches_coord)
+            # print('headposition: ', headPosition)
+            # print('````````````````````````````')
+    return len(heads) > 1
