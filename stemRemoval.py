@@ -8,21 +8,18 @@ def stemRemoval(img, staffLineSpacing):
     height, width = outputImg.shape
     verticalProjection = (
         np.sum((255 - outputImg)/255, axis=0)).astype('uint64')
-    maxVertical = 3 * staffLineSpacing 
+    maxVertical = 7 * staffLineSpacing / 2 
     mask = np.where(verticalProjection <= maxVertical, 0, 1)
     runlengths, startpositions, values = rle(mask)
     stemsWidths = runlengths[np.nonzero(values)[0]]
     stemsPositions = startpositions[np.nonzero(values)[0]]
 
-    # assume that the stem is almost vertical (bounding box of the stem width = 5)
-    maxStemSkew = 5
     maxStemWidth = np.max(stemsWidths, initial=0)
-    threshold = maxStemSkew / 2
 
     for stem in stemsPositions:
         for y in range(0, height, 1):
             if outputImg[y, stem] != 0:
-                for j in range(1, round(threshold/2)):
+                for j in range(1, round(maxStemWidth)):
                     if stem + j < width and outputImg[y, stem + j] == 0:
                         stem = stem + j
                         break
