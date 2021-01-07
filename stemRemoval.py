@@ -1,6 +1,7 @@
 import numpy as np
 from skimage.draw import line
 from itertools import groupby
+from commonfunctions import rle
 
 
 def stemRemoval(img, staffLineSpacing):
@@ -42,17 +43,17 @@ def runs_of_ones_list(bits):
 # returns: tuple (runlengths, startpositions, values)
 
 
-def rle(bits):
-    n = len(bits)
-    if n == 0:
-        return (None, None, None)
-    else:
-        # pairwise unequal (string safe)
-        y = np.array(bits[1:] != bits[:-1])
-        i = np.append(np.where(y), n - 1)   # must include last element posi
-        lengths = np.diff(np.append(-1, i))       # run lengths
-        positions = np.cumsum(np.append(0, lengths))[:-1]  # positions
-        return(lengths, positions, bits[i])
+# def rle(bits):
+#     n = len(bits)
+#     if n == 0:
+#         return (None, None, None)
+#     else:
+#         # pairwise unequal (string safe)
+#         y = np.array(bits[1:] != bits[:-1])
+#         i = np.append(np.where(y), n - 1)   # must include last element posi
+#         lengths = np.diff(np.append(-1, i))       # run lengths
+#         positions = np.cumsum(np.append(0, lengths))[:-1]  # positions
+#         return(lengths, positions, bits[i])
 
 
 def testHorizontalThreshold(img, x, y, threshold):

@@ -5,7 +5,7 @@ import numpy as np
 from staffLine import *
 
 
-img = rgb2gray(io.imread('dataset/scanned/16.PNG'))
+img = rgb2gray(io.imread('dataset/scanned/02.PNG'))
 
 noisy_img = img_as_ubyte(img)
 img_median_filtered = hybridMedian(noisy_img)
@@ -25,7 +25,12 @@ binary = adaptiveThresh(image_rotated, t=15, div=8)
 show_images([binary])
 img_staffLines_removed , staffLines, staffLineSpacing, staffHeight = staffLineRemoval(binary, 1)
 
-objects = split_objects(binary, img_staffLines_removed, staffLines)
+start_x = get_start_x(binary, len(staffLines), staffHeight)
+img_clipped = img_staffLines_removed[:, start_x:img_staffLines_removed.shape[1]]
+show_images([img_clipped])
+binary = binary[:, start_x:img_staffLines_removed.shape[1]]
+
+objects = split_objects(binary, img_clipped, staffLines)
 
 templates = read_all_templates()   
 point_img = np.ones((20,20))

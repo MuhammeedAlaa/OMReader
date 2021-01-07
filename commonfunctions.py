@@ -419,3 +419,26 @@ def read_all_templates():
 #            else:    
 #                print(classify_accidentals(obj, templates, staffHeight))
        
+def rle(bits):
+    n = len(bits)
+    if n == 0:
+        return (None, None, None)
+    else:
+        # pairwise unequal (string safe)
+        y = np.array(bits[1:] != bits[:-1])
+        i = np.append(np.where(y), n - 1)   # must include last element posi
+        lengths = np.diff(np.append(-1, i))       # run lengths
+        positions = np.cumsum(np.append(0, lengths))[:-1]  # positions
+        return(lengths, positions, bits[i])
+
+def get_start_x(binary, numStaffLines, staffHeight):
+    if np.max(binary) == 255:
+        binary = (255 - binary)/255
+    vert_proj = np.sum(binary, axis=0).astype('uint32')
+    mask = np.where(vert_proj >= (numStaffLines-2) * staffHeight, 1, 0)
+    runlengths, startpositions, values = rle(mask)
+    print('rl', runlengths)
+    print('startPositions ', startpositions)
+    print('vals', values)
+    start_x = startpositions[np.argmax(runlengths)] + staffHeight
+    return start_x
