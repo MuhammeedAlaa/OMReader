@@ -14,7 +14,7 @@ outputDirectory = './outputs/'
 try:
     if os.path.exists(outputDirectory) and os.path.isdir(outputDirectory):
         shutil.rmtree(outputDirectory)
-        os.mkdir(outputDirectory)
+    os.mkdir(outputDirectory)
 except:
     print("output file is not empty")
 
