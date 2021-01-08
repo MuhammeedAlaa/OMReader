@@ -74,7 +74,7 @@ def getHeads(staffLineSpacing, objectWithoutStem):
     return heads
 
 
-def classifierB(objectWithoutStem, staffLineSpacing, objectTop, pitches, pitches_coord):
+def classifierB(objectWithoutStem, staffLineSpacing, objectTop, pitches, pitches_coord, accidentals):
     vertical = objectWithoutStem[:, objectWithoutStem.shape[1] // 2 + 1]
     runlengths, startpositions, values = rle(vertical)
     whiteRunHeight = runlengths[np.nonzero(values)[0]]
@@ -82,14 +82,26 @@ def classifierB(objectWithoutStem, staffLineSpacing, objectTop, pitches, pitches
     if len(whiteRunHeight) == 2:
         headPosition = (
             whiteRunPositions[0] + (whiteRunPositions[1] + whiteRunHeight[1])) // 2 + objectTop
-        return pitches[find_nearest(pitches_coord, headPosition)] + '/2'
+        pitch = pitches[find_nearest(
+            pitches_coord, headPosition)]
+        p = pitch[0]
+        d = pitch[1]
+
+        note = p + accidentals + d + '/2'
+        return note
     elif len(whiteRunHeight) == 1:
         headPosition = whiteRunPositions[0] + \
             whiteRunHeight[0] // 2 + objectTop
-        return pitches[find_nearest(pitches_coord, headPosition)] + '/4'
+        pitch = pitches[find_nearest(
+            pitches_coord, headPosition)]
+        p = pitch[0]
+        d = pitch[1]
+        note = p + accidentals + d + '/4'
+        return note
     return ''
 
-def classifierC(objectWithoutStem, stems, staffLineSpacing, objectTop, pitches, pitches_coord):
+
+def classifierC(objectWithoutStem, stems, staffLineSpacing, objectTop, pitches, pitches_coord, accidentals):
     stemPos, stemWidth = stems[0]
     verticalLeftStem = np.zeros((objectWithoutStem.shape[0], 1))
     verticalRightStem = np.zeros((objectWithoutStem.shape[0], 1))
@@ -117,16 +129,24 @@ def classifierC(objectWithoutStem, stems, staffLineSpacing, objectTop, pitches, 
     else:
         headPosition = whiteRunPositionsLeftStem[-1] + \
             whiteRunHeightLeftStem[-1] // 2 + objectTop
+
+    pitch = pitches[find_nearest(
+        pitches_coord, headPosition)]
+    p = pitch[0]
+    d = pitch[1]
     if oneRuns == 1:
-        return pitches[find_nearest(pitches_coord, headPosition)] + '/8'
+        note = p + accidentals + d + '/8'
+        return note
     elif oneRuns == 2:
-        return pitches[find_nearest(pitches_coord, headPosition)] + '/16'
+        note = p + accidentals + d + '/16'
+        return note
     elif oneRuns == 3:
-        return pitches[find_nearest(pitches_coord, headPosition)] + '/32'
+        note = p + accidentals + d + '/32'
+        return note
     return ''
 
 
-def classifierA(objectWithoutStem, stems, staffLineSpacing, staffHeight, objectTop, pitches, pitches_coord, dots):
+def classifierA(objectWithoutStem, stems, staffLineSpacing, staffHeight, objectTop, pitches, pitches_coord, dots, accidentals):
     objectWithoutStem = (255-objectWithoutStem)/255
 
     # make structuring element with height a little more than staffheight and width
@@ -140,10 +160,10 @@ def classifierA(objectWithoutStem, stems, staffLineSpacing, staffHeight, objectT
     note = ''
     if len(oneRuns) == 0:
         note = classifierB(objectWithoutStem, staffLineSpacing,
-                           objectTop, pitches, pitches_coord)
+                           objectTop, pitches, pitches_coord, accidentals)
     else:
         note = classifierC(objectWithoutStem, stems, staffLineSpacing,
-                           objectTop, pitches, pitches_coord)
+                           objectTop, pitches, pitches_coord, accidentals)
     if note != '':
         note = note + ('.' * dots)
     return note
@@ -191,13 +211,15 @@ def beamClassifier(object, objectWithoutStem, staffLineSpacing, staffHeight, obj
         headPosition = cent_y + objectTop
         notes.append(pitches[find_nearest(pitches_coord, headPosition)])
         if rectR_sum < rectL_sum:
-            duration = calc_duration(cent_y, cent_x, objectWithoutStem, 'top', staffLineSpacing)
+            duration = calc_duration(
+                cent_y, cent_x, objectWithoutStem, 'top', staffLineSpacing)
             if duration == '':
                 notes = notes[:-1]
             else:
                 notes[-1] = notes[-1] + '/' + duration
         else:
-            duration = calc_duration(cent_y, cent_x, objectWithoutStem, 'bottom', staffLineSpacing)
+            duration = calc_duration(
+                cent_y, cent_x, objectWithoutStem, 'bottom', staffLineSpacing)
             if duration == '':
                 notes = notes[:-1]
             else:
@@ -226,7 +248,7 @@ def calc_duration(cent_y, cent_x, object, note_pos, staffLineSpacing):
             object[max_y:object.shape[0], detection_line_col])
     mask = np.where(detection_line > 0, 1, 0)
     if len(mask) == 0:
-        mask=np.zeros((1, 5)) # arbitrary empty mask
+        mask = np.zeros((1, 5))  # arbitrary empty mask
     runlengths, startpositions, values = rle(mask)
     num_startpositions = len(startpositions[np.nonzero(values)[0]])
     if num_startpositions == 1:
@@ -248,32 +270,38 @@ def ChordsClassifier(objectWithoutStem, objectTop, staffLineSpacing, pitches, pi
                            return_num=True, connectivity=2)
     props = regionprops(label_img)
     heads = []
-    note = ''
+    note = []
     for prop in props:
         if(prop.area != 1):
             heads.append(prop)
     if len(heads) > 1:
-        note = '{'
         # show_images([eroded], ['chord'])
         for head in heads:
             # print('head centroid',head.centroid)
             headPosition = head.centroid[0] + objectTop
             # print('objecttop:', objectTop)
-            note = note + pitches[find_nearest(pitches_coord, headPosition)] + '/4,' 
+            note.append(pitches[find_nearest(
+                pitches_coord, headPosition)] + '/4')
             # print('pitches', pitches)
             # print('pitches_coordinates', pitches_coord)
             # print('headposition: ', headPosition)
             # print('````````````````````````````')
-    if note != '':
-        note = note[:-1] + '}'
+    if len(note) != 0:
+        note = sorted(note)
+        out = "{"
+        for n in note:
+            out = out + n + ","
+        note = out[:-1] + "}"
+    else:
+        note = ''
     return note
 
 
 def chordOrBeamCheck(objectWithouStems):
     height, width = objectWithouStems.shape
     objectWithouStems = (255 - objectWithouStems)/255
-    upperRect = objectWithouStems[0:height//4,:]
-    lowerRect = objectWithouStems[:,3*height//4:]
+    upperRect = objectWithouStems[0:height//4, :]
+    lowerRect = objectWithouStems[:, 3*height//4:]
     if min(np.sum(upperRect), np.sum(lowerRect)) == 0:
         return 'chord'
     else:

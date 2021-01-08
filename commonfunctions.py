@@ -385,33 +385,33 @@ def check_match(dictionary_temp, img):
 def classify_accidentals(obj, templates, staffHeight):
     dictionary_matches = {}
     dictionary_matches["2"] = check_match(templates[0], obj[0])
-    dictionary_matches["3"] = check_match(templates[1], obj[0])
-    dictionary_matches["4"] = check_match(templates[2], obj[0])
-    dictionary_matches["8"] = check_match(templates[3], obj[0])
-    dictionary_matches["&&"] = check_match(templates[4], obj[0])
-    dictionary_matches["##"] = check_match(templates[5], obj[0])
-    dictionary_matches["&"] = check_match(templates[6], obj[0])
-    dictionary_matches["full_note"] = check_match(templates[7], obj[0])
-    dictionary_matches[""] = check_match(templates[8], obj[0])
-    dictionary_matches["#"] = check_match(templates[9], obj[0])
+    dictionary_matches["4"] = check_match(templates[1], obj[0])
+    dictionary_matches["&&"] = check_match(templates[2], obj[0])
+    dictionary_matches["##"] = check_match(templates[3], obj[0])
+    dictionary_matches["&"] = check_match(templates[4], obj[0])
+    dictionary_matches["full_note"] = check_match(templates[5], obj[0])
+    dictionary_matches[""] = check_match(templates[6], obj[0])
+    dictionary_matches["#"] = check_match(templates[7], obj[0])
     # for mat in dictionary_matches:
     #    print(mat + " = {}".format(dictionary_matches[mat]))
     best_match = max(dictionary_matches.items(), key=operator.itemgetter(1))[0]
-    # print(best_match)
+    t = "accidental"
+    if best_match == "2" or best_match == "4":
+        t = "number"
+    if best_match == "full_note":
+        t = "full_note"
     if dictionary_matches[best_match] == 0:
-        return "full_note"
+        return ("full_note", "full_note")
     if best_match == "&&" or best_match == "&":
         if dictionary_matches["&&"] >= dictionary_matches["&"]:
-            return "&&"
-        return "&"
-    return best_match
+            return ("&&", t)
+        return ("&", t)
+    return (best_match, t)
 
 
 def read_all_templates():
     temps_2 = read_temps_versions("2")
-    temps_3 = read_temps_versions("3")
     temps_4 = read_temps_versions("4")
-    temps_8 = read_temps_versions("8")
     temps_double_flat = read_temps_versions("double_flat")
     temps_double_sharp = read_temps_versions("double_sharp")
     temps_flat = read_temps_versions("flat")
@@ -419,8 +419,8 @@ def read_all_templates():
     temps_natural = read_temps_versions("natural")
     temps_sharp = read_temps_versions("sharp")
 
-    templates = [temps_2, temps_3, temps_4, temps_8, temps_double_flat, temps_double_sharp,
-                 temps_flat, temps_full_note,                            temps_natural, temps_sharp]
+    templates = [temps_2, temps_4, temps_double_flat, temps_double_sharp,
+                 temps_flat, temps_full_note, temps_natural, temps_sharp]
     return templates
 
 
@@ -434,7 +434,7 @@ def read_all_templates():
 #                print(".")
 #            else:
 #                print(classify_accidentals(obj, templates, staffHeight))
-       
+
 def rle(bits):
     n = len(bits)
     if n == 0:
@@ -446,6 +446,7 @@ def rle(bits):
         lengths = np.diff(np.append(-1, i))       # run lengths
         positions = np.cumsum(np.append(0, lengths))[:-1]  # positions
         return(lengths, positions, bits[i])
+
 
 def get_start_x(binary, numStaffLines, staffHeight):
     if np.max(binary) == 255:
@@ -460,17 +461,17 @@ def get_start_x(binary, numStaffLines, staffHeight):
 def writeOutput(filename, outputList):
     outputString = ''
     with open(filename, 'w') as f:
-        if(len(outputList)>1):
+        if(len(outputList) > 1):
             outputString = outputString + "{\n[ "
         else:
             outputString = outputString + "[ "
-        
+
         for block in outputList:
             for item in block:
                 outputString = outputString + item + ' '
             outputString = outputString[:-1] + "],\n["
-        
-        outputString = outputString[:-4]
+
+        outputString = outputString[:-3]
 
         if(len(outputList) > 1):
             outputString = outputString + '\n}'
