@@ -88,8 +88,15 @@ for imageIndex in range(len(inputImages)):
             if note != '':
                 imgOutput[-1].append(note)
         else:
-                notes = beamClassifier(object, objectWithouStem, staffLineSpacing,
+            if chordOrBeamCheck(objectWithouStem) == 'chord':
+              note = ChordsClassifier(object, top,staffLineSpacing, pitches, pitches_coord)
+              if note != '':
+                imgOutput[-1].append(note)
+            else:
+                beamClassifier(object, objectWithouStem, staffLineSpacing,
                         staffHeight, top, pitches, pitches_coord)
+                notes = beamClassifier(object, objectWithouStem, staffLineSpacing,
+                    staffHeight, top, pitches, pitches_coord)
                 imgOutput[-1].extend(notes)
     
     outputFileName = outputDirectory + filenames[imageIndex] + '.txt'

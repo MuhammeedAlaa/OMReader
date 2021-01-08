@@ -131,7 +131,7 @@ def classifierA(objectWithoutStem, stems, staffLineSpacing, staffHeight, objectT
 
     # make structuring element with height a little more than staffheight and width
     # of three pixels with ones in the middle column to remove the ledgers
-    se = np.zeros((staffHeight+2, 3))
+    se = np.zeros((2*staffHeight, 3))
     se[:, se.shape[1]//2] = 1
     objectWithoutStem = binary_erosion(objectWithoutStem, se)
     # show_images([objectWithoutStem], ['eroded'])
@@ -159,7 +159,7 @@ def beamClassifier(object, objectWithoutStem, staffLineSpacing, staffHeight, obj
     # remove ledgers
     # make structuring element with height a little more than staffheight and width
     # of three pixels with ones in the middle column to remove the ledgers
-    se = np.zeros((staffHeight+2, 3))
+    se = np.zeros((2*staffHeight, 3))
     se[:, se.shape[1]//2] = 1
     # se = np.ones((2 * staffHeight, staffHeight))
     objectWithoutStem = binary_erosion(objectWithoutStem, se)
@@ -241,7 +241,7 @@ def calc_duration(cent_y, cent_x, object, note_pos, staffLineSpacing):
 
 
 def ChordsClassifier(objectWithoutStem, objectTop, staffLineSpacing, pitches, pitches_coord):
-    se = disk((staffLineSpacing-2) // 2 - 1)
+    se = disk((staffLineSpacing) // 2)
     objectWithoutStem = np.copy(objectWithoutStem)
     eroded = binary_erosion((255 - objectWithoutStem) / 255, se)
     label_img, num = label(eroded, background=0,
@@ -267,3 +267,14 @@ def ChordsClassifier(objectWithoutStem, objectTop, staffLineSpacing, pitches, pi
     if note != '':
         note = note[:-1] + '}'
     return note
+
+
+def chordOrBeamCheck(objectWithouStems):
+    height, width = objectWithouStems.shape
+    objectWithouStems = (255 - objectWithouStems)/255
+    upperRect = objectWithouStems[0:height//4,:]
+    lowerRect = objectWithouStems[:,3*height//4:]
+    if min(np.sum(upperRect), np.sum(lowerRect)) == 0:
+        return 'chord'
+    else:
+        return 'beam'

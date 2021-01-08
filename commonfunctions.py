@@ -468,7 +468,7 @@ def writeOutput(filename, outputList):
         for block in outputList:
             for item in block:
                 outputString = outputString + item + ' '
-            outputString = outputString + "],\n[ "
+            outputString = outputString[:-1] + "],\n["
         
         outputString = outputString[:-4]
 

@@ -7,15 +7,11 @@ from commonfunctions import rle
 def stemRemoval(img, staffLineSpacing):
     outputImg = np.copy(img)
     height, width = outputImg.shape
-    verticalProjection = (
-        np.sum((255 - outputImg)/255, axis=0)).astype('uint64')
-    maxVertical = 7 * staffLineSpacing / 2 
-    mask = np.where(verticalProjection <= maxVertical, 0, 1)
-    runlengths, startpositions, values = rle(mask)
-    stemsWidths = runlengths[np.nonzero(values)[0]]
-    stemsPositions = startpositions[np.nonzero(values)[0]]
+    stemsPositions, stemsWidths = StemDetection(img, staffLineSpacing)
 
-    maxStemWidth = int(max(stemsWidths, default=0) * 1.5)
+    # margin of error of the stem width as it may have some small thick part
+    stemWidthErrorMargin = 5
+    maxStemWidth = int(max(stemsWidths, default=0)) + stemWidthErrorMargin
 
     for stem in stemsPositions:
         for y in range(0, height, 1):
@@ -40,20 +36,26 @@ def stemRemoval(img, staffLineSpacing):
 def runs_of_ones_list(bits):
     return [sum(g) for b, g in groupby(bits) if b]
 
-# returns: tuple (runlengths, startpositions, values)
 
+def StemDetection(img, staffLineSpacing):
+    height, width = img.shape
+    maxVertical = 7 * staffLineSpacing / 2 
+    RLEImg = (255 - np.copy(img))/255
+    candidateStemsPos = []
+    stemsWidths = []
+    stemsPositions = []
+    for i in range(width):
+        runlengths, startpositions, values = rle(RLEImg[:, i])
+        objectRuns = runlengths[np.nonzero(values)[0]]
+        if any(y >= maxVertical for y in objectRuns):
+            if len(candidateStemsPos) > 0 and candidateStemsPos[-1] + 1 == i:
+                stemsWidths[-1] += 1
+            else:
+                stemsWidths.append(1)
+                stemsPositions.append(i)
+            candidateStemsPos.append(i)
+    return (stemsPositions, stemsWidths)
 
-# def rle(bits):
-#     n = len(bits)
-#     if n == 0:
-#         return (None, None, None)
-#     else:
-#         # pairwise unequal (string safe)
-#         y = np.array(bits[1:] != bits[:-1])
-#         i = np.append(np.where(y), n - 1)   # must include last element posi
-#         lengths = np.diff(np.append(-1, i))       # run lengths
-#         positions = np.cumsum(np.append(0, lengths))[:-1]  # positions
-#         return(lengths, positions, bits[i])
 
 
 def testHorizontalThreshold(img, x, y, threshold):
