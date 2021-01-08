@@ -10,8 +10,8 @@ def stemRemoval(img, staffLineSpacing):
     stemsPositions, stemsWidths = StemDetection(img, staffLineSpacing)
 
     # margin of error of the stem width as it may have some small thick part
-    stemWidthErrorMargin = 5
-    maxStemWidth = int(max(stemsWidths, default=0)) + stemWidthErrorMargin
+    stemWidthErrorMargin = 1.5
+    maxStemWidth = int(max(stemsWidths, default=0)*stemWidthErrorMargin)
 
     for stem in stemsPositions:
         for y in range(0, height, 1):
