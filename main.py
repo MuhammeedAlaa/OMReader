@@ -46,8 +46,14 @@ for imageIndex in range(len(inputImages)):
     img_staffLines_removed, staffLines, staffLineSpacing, staffHeight = staffLineRemoval(
         binary, 1)
 
+    # clipping the unnecessary part before the real music score 
+    start_x = get_start_x(binary, len(staffLines), staffHeight)
+    binary_clipped = binary[:, start_x:img_staffLines_removed.shape[1]]
+    img_staffLines_removed_clipped = img_staffLines_removed[:, start_x:img_staffLines_removed.shape[1]]
+
+
     # split each object in the score to be identified
-    objects = split_objects(binary, img_staffLines_removed, staffLines)
+    objects = split_objects(binary_clipped, img_staffLines_removed_clipped, staffLines)
 
     # templates to be used to classify the reltively short symbols with SIFT
     templates = read_all_templates()
@@ -81,6 +87,7 @@ for imageIndex in range(len(inputImages)):
                 objectLabel = pitches[find_nearest(
                     pitches_coord, top + len(object)/2)] + '/1'
                 objectLabel = objectLabel + '.' * dots
+                imgOutput[-1].append(objectLabel)
             if objectType == "number":
                 number = number + 1
                 if objectLabel == "2":
