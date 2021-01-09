@@ -46,14 +46,15 @@ for imageIndex in range(len(inputImages)):
     img_staffLines_removed, staffLines, staffLineSpacing, staffHeight = staffLineRemoval(
         binary, 1)
 
-    # clipping the unnecessary part before the real music score 
+    # clipping the unnecessary part before the real music score
     start_x = get_start_x(binary, len(staffLines), staffHeight)
     binary_clipped = binary[:, start_x:img_staffLines_removed.shape[1]]
-    img_staffLines_removed_clipped = img_staffLines_removed[:, start_x:img_staffLines_removed.shape[1]]
-
+    img_staffLines_removed_clipped = img_staffLines_removed[:,
+                                                            start_x:img_staffLines_removed.shape[1]]
 
     # split each object in the score to be identified
-    objects = split_objects(binary_clipped, img_staffLines_removed_clipped, staffLines)
+    objects = split_objects(
+        binary_clipped, img_staffLines_removed_clipped, staffLines)
 
     # templates to be used to classify the reltively short symbols with SIFT
     templates = read_all_templates()
@@ -122,10 +123,8 @@ for imageIndex in range(len(inputImages)):
                 if note != '':
                     imgOutput[-1].append(note)
             else:
-                beamClassifier(object, objectWithouStem, staffLineSpacing,
-                               staffHeight, top, pitches, pitches_coord)
                 notes = beamClassifier(object, objectWithouStem, staffLineSpacing,
-                                       staffHeight, top, pitches, pitches_coord)
+                                       staffHeight, top, pitches, pitches_coord, stems)
                 imgOutput[-1].extend(notes)
 
     outputFileName = outputDirectory + filenames[imageIndex] + '.txt'

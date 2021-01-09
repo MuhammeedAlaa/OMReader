@@ -169,7 +169,7 @@ def classifierA(objectWithoutStem, stems, staffLineSpacing, staffHeight, objectT
     return note
 
 
-def beamClassifier(object, objectWithoutStem, staffLineSpacing, staffHeight, objectTop, pitches, pitches_coord):
+def beamClassifier(object, objectWithoutStem, staffLineSpacing, staffHeight, objectTop, pitches, pitches_coord, stems):
     objectWithoutStem = (255-objectWithoutStem)/255
     # check if it the beam is above or below the note heads
     height, width = objectWithoutStem.shape
@@ -203,23 +203,33 @@ def beamClassifier(object, objectWithoutStem, staffLineSpacing, staffHeight, obj
         bboxes_centroids.sort(key=lambda x: x[1])
         bboxes.sort(key=lambda x: x[1])
     notes = []
-    for centroid in bboxes_centroids:
-        cent_y = centroid[0]
-        cent_x = centroid[1]
+    for i in range(len(bboxes_centroids)):
+        cent_y = bboxes_centroids[i][0]
+        stem_x = stems[i][0]
         # top_staff_y = staffLines[top_block_staffLine[cnt_obj]]
         # print('pos : ' + str((cent_y - top_staff_y) // staffLineSpacing))
         headPosition = cent_y + objectTop
         notes.append(pitches[find_nearest(pitches_coord, headPosition)])
         if rectR_sum < rectL_sum:
-            duration = calc_duration(
-                cent_y, cent_x, objectWithoutStem, 'top', staffLineSpacing)
+            # treat the last note specially
+            if i == len(bboxes_centroids) - 1:
+                duration = calc_duration(
+                    cent_y, stem_x, objectWithoutStem, 'top', 1, staffLineSpacing)
+            else:
+                duration = calc_duration(
+                    cent_y, stem_x, objectWithoutStem, 'top', 0, staffLineSpacing)
             if duration == '':
                 notes = notes[:-1]
             else:
                 notes[-1] = notes[-1] + '/' + duration
         else:
-            duration = calc_duration(
-                cent_y, cent_x, objectWithoutStem, 'bottom', staffLineSpacing)
+            # treat the first note specially
+            if i == 0:
+                duration = calc_duration(
+                    cent_y, stem_x, objectWithoutStem, 'bottom', 1, staffLineSpacing)
+            else:
+                duration = calc_duration(
+                    cent_y, stem_x, objectWithoutStem, 'bottom', 0, staffLineSpacing)
             if duration == '':
                 notes = notes[:-1]
             else:
@@ -227,25 +237,29 @@ def beamClassifier(object, objectWithoutStem, staffLineSpacing, staffHeight, obj
     return notes
 
 
-def calc_duration(cent_y, cent_x, object, note_pos, staffLineSpacing):
+def calc_duration(cent_y, stem_x, object, note_pos, special, staffLineSpacing):
     if note_pos == 'bottom':
-        # to get to the point above the note head
+        # treat the first note specially
         min_y = int(cent_y - staffLineSpacing)
-        if int(cent_x + 1.5 * staffLineSpacing) >= object.shape[1]:
-            detection_line_col = int(cent_x - 1.5 * staffLineSpacing)
+        if special == 1:
+            detection_line_col = int(stem_x + 2)
         else:
-            detection_line_col = int(cent_x + 1.5 * staffLineSpacing)
+            # to get to the point above the note head
+            detection_line_col = int(stem_x - 2)
         detection_line = np.array(object[0:min_y, detection_line_col], ndmin=1)
 
     else:
         # to get to the point below the note head
         max_y = int(cent_y + 1.5 * staffLineSpacing)
-        if int(cent_x - staffLineSpacing) <= 0:
-            detection_line_col = int(cent_x + 1.5 * staffLineSpacing)
+        # treat the last note specially
+        if special == 1:
+            detection_line_col = int(stem_x - 2)
         else:
-            detection_line_col = int(cent_x - 1.5 * staffLineSpacing)
+            detection_line_col = int(stem_x + 2)
+
         detection_line = np.array(
             object[max_y:object.shape[0], detection_line_col])
+
     mask = np.where(detection_line > 0, 1, 0)
     if len(mask) == 0:
         mask = np.zeros((1, 5))  # arbitrary empty mask

@@ -452,9 +452,10 @@ def get_start_x(binary, numStaffLines, staffHeight):
     if np.max(binary) == 255:
         binary = (255 - binary)/255
     vert_proj = np.sum(binary, axis=0).astype('uint32')
-    mask = np.where(vert_proj >= (numStaffLines-2) * staffHeight, 1, 0)
+    mask = np.where(vert_proj >= (numStaffLines//2) * staffHeight, 1, 0)
     runlengths, startpositions, values = rle(mask)
     start_x = startpositions[np.argmax(runlengths)] + staffHeight
+
     return start_x
 
 
