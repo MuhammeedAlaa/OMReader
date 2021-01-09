@@ -315,7 +315,7 @@ def chordOrBeamCheck(objectWithouStems):
     height, width = objectWithouStems.shape
     objectWithouStems = (255 - objectWithouStems)/255
     upperRect = objectWithouStems[0:height//4, :]
-    lowerRect = objectWithouStems[:, 3*height//4:]
+    lowerRect = objectWithouStems[3*height//4:,:]
     if min(np.sum(upperRect), np.sum(lowerRect)) == 0:
         return 'chord'
     else:
