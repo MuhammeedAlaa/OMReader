@@ -32,12 +32,12 @@ for imageIndex in range(len(inputImages)):
     img_median_filtered = hybridMedian(img).astype('uint8')
     # img_median_filtered = median(noisy_img)
     # gaussian filtering
-    img_gaussian_filtered = img_as_ubyte(
-        gaussian(img_median_filtered, sigma=0.2))
+    img_gaussian_filtered = gaussian(img_median_filtered, sigma=0.2)
+    img_gaussian_filtered = (img_gaussian_filtered * 255).astype(np.uint8)
 
     # image rotation
-    image_rotated = img_as_ubyte(
-        skew_angle_hough_transform(img_gaussian_filtered))
+    image_rotated = skew_angle_hough_transform(img_gaussian_filtered)
+    image_rotated = (image_rotated * 255).astype(np.uint8)
 
     # image binarization
     binary = adaptiveThresh(image_rotated, t=15, div=8)
@@ -79,14 +79,15 @@ for imageIndex in range(len(inputImages)):
 
         # classify the relatively short symbols using SIFT
         if len(object) < 3.5*staffLineSpacing:
-            # show_images([object])
             objectLabel, objectType = classify_accidentals(
                 (object, top, blockNumber), templates, staffLineSpacing)
             if objectType == "accidental":
                 accidentals += objectLabel
             if objectLabel == 'full_note':
-                objectLabel = pitches[find_nearest(
-                    pitches_coord, top + len(object)/2)] + '/1'
+                pitch = pitches[find_nearest(
+                    pitches_coord, top + len(object)/2)]
+                objectLabel = pitch[0] + accidentals + pitch[1] + '/1'
+                accidentals = ''
                 objectLabel = objectLabel + '.' * dots
                 imgOutput[-1].append(objectLabel)
             if objectType == "number":
@@ -102,7 +103,6 @@ for imageIndex in range(len(inputImages)):
                 number = 0
             continue
         objectWithouStem, stems = stemRemoval(object, staffLineSpacing)
-        # show_images([object, objectWithouStem])
         if len(stems) == 0:
             continue
         elif len(stems) == 1:
