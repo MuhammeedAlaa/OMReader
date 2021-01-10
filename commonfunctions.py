@@ -326,7 +326,7 @@ def read_temp():
 def check_temp(obj, tmp, accuracy):
     #show_images([tmp, obj], ["Template", "Object"])
     try:
-        sift = cv2.xfeatures2d.SIFT_create()
+        sift = cv2.SIFT_create()
         kp1, des1 = sift.detectAndCompute(tmp, None)
         kp2, des2 = sift.detectAndCompute(obj, None)
         bf = cv2.BFMatcher()
