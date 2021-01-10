@@ -325,19 +325,7 @@ def chordOrBeamCheck(objectWithouStems):
     else:
         return 'beam'
 
-############################################################################
-
-def read_temp():
-    directory = os.fsencode("../temp")
-    templates = {}
-    for file in os.listdir(directory):
-        filename = os.fsdecode(file)
-        if filename.endswith(".png") or filename.endswith(".jpg"):
-            image = rgb2gray(io.imread(os.path.join('../temp/', filename)))
-            if image.dtype != "uint8":
-                image = (image * 255).astype("uint8")
-            templates[filename[0:-4]] = image
-    return templates
+#################################################TABLE1#########################################################
 
 
 def check_temp(obj, tmp, accuracy):
@@ -359,32 +347,13 @@ def check_temp(obj, tmp, accuracy):
         #print("percentage = 0")
         return 0
 
-
-def check_all_templates(obj, templates):
-    show_images([obj])
-    best_solution = 0
-    label = None
-    for tmp in templates:
-        result = check_temp(obj, templates[tmp], 0.3)
-        if result > best_solution:
-            best_solution = result
-            label = tmp
-    if (best_solution > 0) and (label is not None):
-        print("Matched with {}".format(label))
-        return label
-    else:
-        print("Unmatched")
-        return None
-
-
 def read_temps_versions(tmp_name):
     directory = os.fsencode("temp/"+tmp_name)
     templates = {}
     for file in os.listdir(directory):
         filename = os.fsdecode(file)
         if filename.endswith(".png") or filename.endswith(".jpg"):
-            image = rgb2gray(
-                io.imread(os.path.join('temp/'+tmp_name, filename)))
+            image = io.imread(os.path.join('temp/'+tmp_name, filename))
             if image.dtype != "uint8":
                 image = (image * 255).astype("uint8")
             templates[filename[0:-4]] = image

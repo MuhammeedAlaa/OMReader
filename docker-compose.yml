@@ -1,0 +1,11 @@
+version: "3.8"
+services:
+  ipproject:
+    image: sem02
+    build: .
+    volumes:
+      - ${INPUT_TEST}:${INPUT_TEST}:ro
+      - ${OUTPUT_TEST}:${OUTPUT_TEST}
+    environment:
+      INPUT_TEST: ${INPUT_TEST}
+      OUTPUT_TEST: ${OUTPUT_TEST}

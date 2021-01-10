@@ -4,13 +4,20 @@ from stemRemoval import stemRemoval
 import numpy as np
 from staffLine import *
 import shutil
+import sys
+import argparse
 
+parser = argparse.ArgumentParser()
+parser.add_argument("inputfolder", help = "Input File")
+parser.add_argument("outputfolder", help = "Output File")
+args = parser.parse_args()
 
-inputImagesDirectory = "./dataset/scanned"
+inputImagesDirectory = args.inputfolder
 directory = os.fsencode(inputImagesDirectory)
 inputImages = []
 filenames = []
-outputDirectory = './outputs/'
+outputDirectory = args.outputfolder
+
 try:
     if os.path.exists(outputDirectory) and os.path.isdir(outputDirectory):
         shutil.rmtree(outputDirectory)
@@ -127,5 +134,5 @@ for imageIndex in range(len(inputImages)):
                                        staffHeight, top, pitches, pitches_coord, stems)
                 imgOutput[-1].extend(notes)
 
-    outputFileName = outputDirectory + filenames[imageIndex] + '.txt'
+    outputFileName = outputDirectory + '/' + filenames[imageIndex] + '.txt'
     writeOutput(outputFileName, imgOutput)
