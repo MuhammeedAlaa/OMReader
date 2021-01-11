@@ -7,6 +7,7 @@ import shutil
 import sys
 import argparse
 
+# reading input/output folders
 parser = argparse.ArgumentParser()
 parser.add_argument("inputfolder", help="Input File")
 parser.add_argument("outputfolder", help="Output File")
@@ -18,6 +19,8 @@ inputImages = []
 filenames = []
 outputDirectory = args.outputfolder
 
+
+# checking if input doesn't exist  
 try:
     if os.path.exists(outputDirectory) and os.path.isdir(outputDirectory):
         shutil.rmtree(outputDirectory)
@@ -25,6 +28,10 @@ try:
 except:
     print("output file is not empty")
 
+# templates to be used to classify the reltively short symbols with SIFT
+templates = read_all_templates()
+
+# reading all images in input folder  
 for file in os.listdir(directory):
     filename = os.fsdecode(file)
     filenames.append(os.path.splitext(filename)[0])
@@ -32,11 +39,14 @@ for file in os.listdir(directory):
         inputImagesDirectory, filename), as_gray=True))
     inputImages.append(image)
 
+
+# applying pipeline to all images  
 for imageIndex in range(len(inputImages)):
     imgOutput = []
     img = inputImages[imageIndex]
     try:
         
+        ############################ Pre-Analysis ###############################
         height, width = img.shape
         scaleFactor = min(1800/height, 1800/width)
         if scaleFactor < 1:
@@ -53,7 +63,9 @@ for imageIndex in range(len(inputImages)):
         # image rotation
         image_rotated = skew_angle_hough_transform(img_gaussian_filtered)
         image_rotated = (image_rotated * 255).astype(np.uint8)
+        
 
+        ############################ Segmentation ###############################
         # image binarization
         binary = adaptiveThresh(image_rotated, t=15, div=8)
 
@@ -71,8 +83,6 @@ for imageIndex in range(len(inputImages)):
         objects = split_objects(
             binary_clipped, img_staffLines_removed_clipped, staffLines)
 
-        # templates to be used to classify the reltively short symbols with SIFT
-        templates = read_all_templates()
 
         # if the score had multiple groups we divide them into blocks that have 5 stafflines
         sameBlock = objects[0][2]
@@ -84,6 +94,9 @@ for imageIndex in range(len(inputImages)):
         accidentals = ""
         number = 0
         two = False
+
+        
+        ############################# Classification #############################
         for object, top, blockNumber, dots in objects:
             try:
                 # if the we entered a new block recalculte the pitches coordinates

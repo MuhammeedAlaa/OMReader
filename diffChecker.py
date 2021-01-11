@@ -1,6 +1,7 @@
 import difflib
 import os
 
+#function to calculate difference of code output with expected output
 filenames = []
 TAFilesPath = './dataset/gt' 
 ourOutputPath = './outputs'

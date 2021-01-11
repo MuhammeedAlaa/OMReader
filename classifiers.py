@@ -7,13 +7,13 @@ from skimage.draw import line
 from itertools import groupby
 import math
 import cv2
-from commonfunctions import show_images
+from commonfunctions import show_images, rle
 import os
 from skimage.color import rgb2gray, rgb2hsv
 import skimage.io as io
 import operator
 
-
+#function that checks nearest line to the head of note
 def find_nearest(array, value):
     idx = np.searchsorted(array, value, side="left")
     if idx > 0 and (idx == len(array) or math.fabs(value - array[idx-1]) < math.fabs(value - array[idx])):
@@ -21,26 +21,12 @@ def find_nearest(array, value):
     else:
         return idx
 
-
-def rle(bits):
-    n = len(bits)
-    if n == 0:
-        return (None, None, None)
-    else:
-        # pairwise unequal (string safe)
-        y = np.array(bits[1:] != bits[:-1])
-        i = np.append(np.where(y), n - 1)   # must include last element posi
-        lengths = np.diff(np.append(-1, i))       # run lengths
-        positions = np.cumsum(np.append(0, lengths))[:-1]  # positions
-        return(lengths, positions, bits[i])
-
 # returns the run lengths of the ones in the input array
-
-
 def runs_of_ones_list(bits):
     return [sum(g) for b, g in groupby(bits) if b]
 
 
+#function that computes pitches coordinates of note
 def getPitchesCoordinates(staffLineSpacing, staffLines, blockNumber):
     maxLedgers = 2  # TODO: if you increase max ledgers modify the pitches array
     pitches_coord = []
@@ -64,6 +50,7 @@ def getPitchesCoordinates(staffLineSpacing, staffLines, blockNumber):
     return pitches, pitches_coord
 
 
+#function that returns positions of heads of beams/notes/chords
 def getHeads(staffLineSpacing, objectWithoutStem):
     se = disk((staffLineSpacing-2) // 2 - 1)
     eroded = binary_erosion(objectWithoutStem, se)
@@ -77,7 +64,7 @@ def getHeads(staffLineSpacing, objectWithoutStem):
             heads.append(prop)
     return heads
 
-
+#function that classifies all single notes without flags
 def classifierB(objectWithoutStem, staffLineSpacing, objectTop, pitches, pitches_coord, accidentals):
     vertical = objectWithoutStem[:, objectWithoutStem.shape[1] // 2 + 1]
     runlengths, startpositions, values = rle(vertical)
@@ -105,6 +92,7 @@ def classifierB(objectWithoutStem, staffLineSpacing, objectTop, pitches, pitches
     return ''
 
 
+#function that classifies all single notes with flags
 def classifierC(objectWithoutStem, stems, staffLineSpacing, objectTop, pitches, pitches_coord, accidentals):
     stemPos, stemWidth = stems[0]
     verticalLeftStem = np.zeros((objectWithoutStem.shape[0], 1))
@@ -150,6 +138,7 @@ def classifierC(objectWithoutStem, stems, staffLineSpacing, objectTop, pitches, 
     return ''
 
 
+#function that classifies note into group A or B
 def classifierA(objectWithoutStem, stems, staffLineSpacing, staffHeight, objectTop, pitches, pitches_coord, dots, accidentals):
     objectWithoutStem = (255-objectWithoutStem)/255
 
@@ -173,6 +162,7 @@ def classifierA(objectWithoutStem, stems, staffLineSpacing, staffHeight, objectT
     return note
 
 
+#function that classifies all beams
 def beamClassifier(object, objectWithoutStem, staffLineSpacing, staffHeight, objectTop, pitches, pitches_coord, stems):
     objectWithoutStem = (255-objectWithoutStem)/255
     # check if it the beam is above or below the note heads
@@ -264,6 +254,7 @@ def beamClassifier(object, objectWithoutStem, staffLineSpacing, staffHeight, obj
     return notes
 
 
+#function that calculates the duration of note
 def calc_duration(cent_y, stem_x, object, note_pos, special, staffLineSpacing):
     if note_pos == 'bottom':
         # treat the first note specially
@@ -303,6 +294,7 @@ def calc_duration(cent_y, stem_x, object, note_pos, special, staffLineSpacing):
     return note_duration
 
 
+#function that classifies all chords
 def ChordsClassifier(objectWithoutStem, objectTop, staffLineSpacing, pitches, pitches_coord):
     se = disk((staffLineSpacing) // 2)
     objectWithoutStem = np.copy(objectWithoutStem)
@@ -337,7 +329,7 @@ def ChordsClassifier(objectWithoutStem, objectTop, staffLineSpacing, pitches, pi
         note = ''
     return note
 
-
+#function that classifies note into 2 categories(Beam or Chord)
 def chordOrBeamCheck(objectWithouStems):
     height, width = objectWithouStems.shape
     objectWithouStems = (255 - objectWithouStems)/255
@@ -348,11 +340,10 @@ def chordOrBeamCheck(objectWithouStems):
     else:
         return 'beam'
 
-#################################################TABLE1#########################################################
+#####################################  TABLE 1 CLASSIFICATION #############################################
 
-
+#function that checks if template matches the object
 def check_temp(obj, tmp, accuracy):
-    #show_images([tmp, obj], ["Template", "Object"])
     try:
         sift = cv2.SIFT_create()
         kp1, des1 = sift.detectAndCompute(tmp, None)
@@ -370,7 +361,7 @@ def check_temp(obj, tmp, accuracy):
         #print("percentage = 0")
         return 0
 
-
+#function that read template dataset to compare it  
 def read_temps_versions(tmp_name):
     directory = os.fsencode("temp/"+tmp_name)
     templates = {}
@@ -383,7 +374,7 @@ def read_temps_versions(tmp_name):
             templates[filename[0:-4]] = image
     return templates
 
-
+#function that computes how many matches with object  
 def check_match(dictionary_temp, img):
     count = 0
     for im_temp in dictionary_temp:
@@ -391,7 +382,7 @@ def check_match(dictionary_temp, img):
             count += 1
     return count
 
-
+#function that classifies all acidentals/meters/full note  
 def classify_accidentals(obj, templates, staffHeight):
     dictionary_matches = {}
     dictionary_matches["2"] = check_match(templates[0], obj[0])
@@ -419,6 +410,7 @@ def classify_accidentals(obj, templates, staffHeight):
     return (best_match, t)
 
 
+#function that read all template to be compared  
 def read_all_templates():
     temps_2 = read_temps_versions("2")
     temps_4 = read_temps_versions("4")
