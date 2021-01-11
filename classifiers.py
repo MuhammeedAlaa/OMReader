@@ -201,11 +201,11 @@ def beamClassifier(object, objectWithoutStem, staffLineSpacing, staffHeight, obj
         max_col = rect_endpoints[3]
         bbox_width = max_col - min_col
         bbox_height = max_row - min_row
-        if (bbox_height < 1.5 * staffLineSpacing) and (bbox_width < 1.5 * staffLineSpacing):
+        if (bbox_height <= 1.5 * staffLineSpacing) and (bbox_width <= 1.5 * staffLineSpacing):
             bboxes.append(rect_endpoints)
             bboxes_centroids.append(region['centroid'])
-        bboxes_centroids.sort(key=lambda x: x[1])
-        bboxes.sort(key=lambda x: x[1])
+    bboxes_centroids.sort(key=lambda x: x[1])
+    bboxes.sort(key=lambda x: x[1])
     notes = []
     for i in range(len(bboxes_centroids)):
         cent_y = bboxes_centroids[i][0]
@@ -244,7 +244,7 @@ def beamClassifier(object, objectWithoutStem, staffLineSpacing, staffHeight, obj
 def calc_duration(cent_y, stem_x, object, note_pos, special, staffLineSpacing):
     if note_pos == 'bottom':
         # treat the first note specially
-        min_y = int(cent_y - staffLineSpacing)
+        min_y = int(cent_y - 1.5 * staffLineSpacing)
         if special == 1:
             detection_line_col = int(stem_x + 2)
         else:
@@ -319,7 +319,7 @@ def chordOrBeamCheck(objectWithouStems):
     height, width = objectWithouStems.shape
     objectWithouStems = (255 - objectWithouStems)/255
     upperRect = objectWithouStems[0:height//4, :]
-    lowerRect = objectWithouStems[3*height//4:,:]
+    lowerRect = objectWithouStems[3*height//4:, :]
     if min(np.sum(upperRect), np.sum(lowerRect)) == 0:
         return 'chord'
     else:
@@ -346,6 +346,7 @@ def check_temp(obj, tmp, accuracy):
     except:
         #print("percentage = 0")
         return 0
+
 
 def read_temps_versions(tmp_name):
     directory = os.fsencode("temp/"+tmp_name)
