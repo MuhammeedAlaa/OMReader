@@ -206,6 +206,29 @@ def beamClassifier(object, objectWithoutStem, staffLineSpacing, staffHeight, obj
             bboxes_centroids.append(region['centroid'])
     bboxes_centroids.sort(key=lambda x: x[1])
     bboxes.sort(key=lambda x: x[1])
+    # check if the number of stems is less than the number of regions detected
+    try:
+        if(len(stems) < len(bboxes)):
+            raise IndexError
+    except IndexError:
+        bboxes_temp = bboxes
+        bboxes_centroids_t = bboxes_centroids
+        bboxes_temp.sort(key=lambda x: x[0])
+        bboxes_centroids_t.sort(key=lambda x: x[0])
+        diff = len(bboxes) - len(stems)
+        heads_top = rectR_sum < rectL_sum
+        if heads_top:
+            bboxes_temp = bboxes_temp[:len(bboxes_temp) - diff]
+            bboxes_centroids_t = bboxes_centroids_t[:len(
+                bboxes_centroids_t) - diff]
+        else:
+            bboxes_temp = bboxes_temp[diff:]
+            bboxes_centroids_t = bboxes_centroids_t[diff:]
+        bboxes_temp.sort(key=lambda x: x[1])
+        bboxes_centroids_t.sort(key=lambda x: x[1])
+        bboxes = bboxes_temp
+        bboxes_centroids = bboxes_centroids_t
+    # ---------------------------------------------------------------------------
     notes = []
     for i in range(len(bboxes_centroids)):
         cent_y = bboxes_centroids[i][0]

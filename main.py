@@ -8,8 +8,8 @@ import sys
 import argparse
 
 parser = argparse.ArgumentParser()
-parser.add_argument("inputfolder", help = "Input File")
-parser.add_argument("outputfolder", help = "Output File")
+parser.add_argument("inputfolder", help="Input File")
+parser.add_argument("outputfolder", help="Output File")
 args = parser.parse_args()
 
 inputImagesDirectory = args.inputfolder
