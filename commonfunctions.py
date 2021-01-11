@@ -28,6 +28,7 @@ from skimage.draw import ellipse
 from skimage.transform import hough_circle, hough_circle_peaks
 
 
+#function that orders points to be clockwise with padding
 def order_points(pts):
     rect = np.zeros((4, 2), dtype="float32")
 
@@ -53,7 +54,7 @@ def order_points(pts):
 
     return rect
 
-
+#function that orders rectangle points to be clockwise
 def order_box(pts):
     rect = np.zeros((4, 2), dtype="float32")
 
@@ -67,6 +68,7 @@ def order_box(pts):
     return rect
 
 
+#function that transform the object to another perspective
 def four_point_transform(image, pts):
     rect = order_points(pts)
 
@@ -91,6 +93,7 @@ def four_point_transform(image, pts):
     return warped
 
 
+#function that handles skewing problem
 def deskew_projection(gray_img):
     img = cv2.GaussianBlur(gray_img.copy(), (3, 3), 1)
     edged_img = cv2.Canny(img, 30, 200)
@@ -107,21 +110,15 @@ def deskew_projection(gray_img):
     wrapped_img = four_point_transform(gray_img, order_points(pts)+100)
     return wrapped_img
 
-
+#function that handles projection skewing problem
 def projection_correction(img):
     img2 = deskew_projection(img)
     img3 = deskew_projection(img2)
     return img3
 
-#image = rgb2gray(io.imread('scanned_sheet_low.jpg'))
-# if image.dtype != "uint8":
-#    image = (image * 255).astype("uint8")
-#img2 = projection_correction(image)
-# io.imshow(img2)
 
-# Show the figures / plots inside the notebook
-
-
+# This function is used to show image(s) with titles by sending an array of 
+# images and an array of associated titles.
 def show_images(images, titles=None):
     # This function is used to show image(s) with titles by sending an array of images and an array of associated titles.
     # images[0] will be drawn with the title titles[0] if exists
@@ -144,7 +141,7 @@ def show_images(images, titles=None):
     fig.set_size_inches(np.array(fig.get_size_inches()) * n_ims)
     plt.show()
 
-
+#function that shows Histogram of image
 def showHist(img):
     # An "interface" to matplotlib.axes.Axes.hist() method
     plt.figure()
@@ -153,6 +150,7 @@ def showHist(img):
     bar(imgHist[1].astype(np.uint8), imgHist[0], width=0.8, align='center')
 
 
+#function that binarizes the object using adpative technique
 def adaptiveThresh(img, t, div):
 
     height, width = img.shape
@@ -186,8 +184,6 @@ def adaptiveThresh(img, t, div):
     return out
 
 # this function to read the data set from the folder
-
-
 def readDataSet():
     directory = os.fsencode("./dataset")
     dataset = []
@@ -201,6 +197,7 @@ def readDataSet():
     return dataset
 
 
+# function to apply hybrid median filter to avoid thin edge problem
 def hybridMedian(img):
     # applying the 3 * 3 hybrid filter
     # define filter shapes for different spatial directions
@@ -217,6 +214,7 @@ def hybridMedian(img):
     return filtered_img_hybrid
 
 
+# function to apply rotation on image if needed
 def skew_angle_hough_transform(image):
     edges = canny(image)
     tested_angles = np.deg2rad(np.arange(0.1, 180.0))
@@ -227,7 +225,7 @@ def skew_angle_hough_transform(image):
     img_rotated = rotate(image, skew_angle, resize=True, mode='edge')
     return img_rotated
 
-
+# function to sort contours horizontally
 def sort_contours_horizontally(cnts, method="left-to-right"):
     reverse = False
     i = 0
@@ -242,7 +240,7 @@ def sort_contours_horizontally(cnts, method="left-to-right"):
     # return the list of sorted contours and bounding boxes
     return (cnts, boundingBoxes)
 
-
+# function to split (isolate) objects after staff lines removal
 def split_objects(img_thresh, img_objects, staffLines):
     height = img_objects.shape[0]
     count_blocks = len(staffLines) // 5
@@ -308,6 +306,8 @@ def split_objects(img_thresh, img_objects, staffLines):
 
     return objects
 
+
+#function that computes run-length enconding 
 def rle(bits):
     n = len(bits)
     if n == 0:
@@ -320,7 +320,7 @@ def rle(bits):
         positions = np.cumsum(np.append(0, lengths))[:-1]  # positions
         return(lengths, positions, bits[i])
 
-
+#function that computes top left coordinates of object
 def get_start_x(binary, numStaffLines, staffHeight):
     if np.max(binary) == 255:
         binary = (255 - binary)/255
@@ -331,7 +331,7 @@ def get_start_x(binary, numStaffLines, staffHeight):
 
     return start_x
 
-
+#function to write the output folder
 def writeOutput(filename, outputList):
     outputString = ''
     with open(filename, 'w') as f:
