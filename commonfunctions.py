@@ -18,7 +18,7 @@ from skimage.util import random_noise, pad, img_as_ubyte
 from skimage.filters import median, gaussian
 from skimage.feature import canny
 from skimage.transform import hough_line, hough_line_peaks
-from skimage.transform import rotate
+from skimage.transform import rotate, rescale
 
 import cv2
 # import imutils
