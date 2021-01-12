@@ -19,15 +19,6 @@ inputImages = []
 filenames = []
 outputDirectory = args.outputfolder
 
-
-# checking if input doesn't exist  
-try:
-    if os.path.exists(outputDirectory) and os.path.isdir(outputDirectory):
-        shutil.rmtree(outputDirectory)
-    os.mkdir(outputDirectory)
-except:
-    print("output file is not empty")
-
 # templates to be used to classify the reltively short symbols with SIFT
 templates = read_all_templates()
 
@@ -63,7 +54,7 @@ for imageIndex in range(len(inputImages)):
         # image rotation
         image_rotated = skew_angle_hough_transform(img_gaussian_filtered)
         image_rotated = (image_rotated * 255).astype(np.uint8)
-        
+
 
         ############################ Segmentation ###############################
         # image binarization
@@ -159,5 +150,8 @@ for imageIndex in range(len(inputImages)):
                 pass
     except:
         pass
-    outputFileName = outputDirectory + '/' + filenames[imageIndex] + '.txt'
+    if outputDirectory[-1] == '/':
+      outputFileName = outputDirectory + filenames[imageIndex] + '.txt'
+    else:
+        outputFileName = outputDirectory + '/' + filenames[imageIndex] + '.txt'
     writeOutput(outputFileName, imgOutput)
