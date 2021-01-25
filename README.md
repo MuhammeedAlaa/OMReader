@@ -76,7 +76,7 @@ we support all kinds of chords.
 - symbols are first fed into template matching using SIFT features to identify the following: `Double Sharp`, `Sharp`, `Flat`, `Double Flat`, `Natural`, `Whole Note`, `Time Signatures`.
 
 - if non of the previous symbols was identified we begin classification with our algorithmic approach after removing the stems using the following decision tree.
-![decision-tree](screenshots/decision-tree.PNG)
+![decision-tree](screenshots/decision-tree.png)
 
 ## Tools Used
 
