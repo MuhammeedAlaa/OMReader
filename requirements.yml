@@ -1,4 +1,4 @@
-name: team2
+name: OMReader
 channels:
   - anaconda
   - conda-forge
