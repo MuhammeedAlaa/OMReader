@@ -1,5 +1,5 @@
 # OMReader
-![logo](screenshots/logo.PNG)
+![logo](screenshots/logo.png)
 
 [![GitHub contributors](https://img.shields.io/github/contributors/MuhammeedAlaa/image-processing)](https://github.com/MuhammeedAlaa/image-processing/graphs/contributors)
 [![GitHub forks](https://img.shields.io/github/forks/MuhammeedAlaa/image-processing)](https://github.com/MuhammeedAlaa/image-processing/network/members)
