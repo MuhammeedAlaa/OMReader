@@ -3,6 +3,7 @@
 
 
 [![GitHub contributors](https://img.shields.io/github/contributors/MuhammeedAlaa/OMReader)](https://github.com/MuhammeedAlaa/OMReader/graphs/contributors)
+![GitHub last commit](https://img.shields.io/github/last-commit/MuhammeedAlaa/OMReader)
 [![GitHub forks](https://img.shields.io/github/forks/MuhammeedAlaa/OMReader)](https://github.com/MuhammeedAlaa/OMReader/network/members)
 [![GitHub stars](https://img.shields.io/github/stars/MuhammeedAlaa/OMReader)](https://github.com/MuhammeedAlaa/OMReader/stargazers)
 [![GitHub license](https://img.shields.io/github/license/MuhammeedAlaa/OMReader)](https://github.com/MuhammeedAlaa/OMReader/blob/master/License)
