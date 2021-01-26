@@ -1,5 +1,6 @@
 # OMReader
-![logo](screenshots/logo.png)
+<img src="screenshots/logo.png" width="250" height="200"></img>
+
 
 [![GitHub contributors](https://img.shields.io/github/contributors/MuhammeedAlaa/OMReader)](https://github.com/MuhammeedAlaa/OMReader/graphs/contributors)
 [![GitHub forks](https://img.shields.io/github/forks/MuhammeedAlaa/OMReader)](https://github.com/MuhammeedAlaa/OMReader/network/members)
@@ -15,6 +16,7 @@
   * [Classification](#Classification)
 - [Tools Used](#Tools-Used)
 - [How to Run](#How-to-Run)
+- [Useful Resources](#Useful-Resources)
 - [Contributers](#Contributers)
 - [License](#License)
 
@@ -98,6 +100,10 @@ python3 main.py <input directory path> <output directory path>
 ```
 
 **Note:** you can run it on windows but you should ignore creating environment with the command previously mentioned but you need anaconda and opencv installed.
+
+## Useful Resources: 
+- [Staff Line Removal](https://github.com/AmbitionXiang/2018_Competition_of_Computer_Design)
+
 
 ## Contributers:
 - [Hossam Alaa](https://github.com/hossamalaa69)
