@@ -32,6 +32,7 @@ This project aims to convert music sheets into a machine-readable version. We ta
 - each stave should start with a G clef.
 - stem height is greater than or equal `3 * staffSpacing` (vertical area between two lines). 
 - note head height equals `staffSpacing`.
+- output file is in [GUIDO music notation](https://en.wikipedia.org/wiki/GUIDO_music_notation).
 
 ## Supported Symbols
 
@@ -91,7 +92,7 @@ we support all kinds of chords.
 - `scikit-image`
 
 ## How to Run
-- install conda
+- Install [conda](https://www.anaconda.com/products/individual)
 ```
 conda env create -f requirements.yml
 
@@ -100,10 +101,12 @@ conda activate OMReader
 python3 main.py <input directory path> <output directory path>
 ```
 
-**Note:** you can run it on windows but you should ignore creating environment with the command previously mentioned but you need anaconda and opencv installed.
+**Note:** you can run it on windows but you should ignore creating environment with the command previously mentioned and you need to have `anaconda` and `opencv` installed.
 
 ## Useful Resources: 
 - [Staff Line Removal](https://github.com/AmbitionXiang/2018_Competition_of_Computer_Design)
+- [Classificaiton](https://www.researchgate.net/publication/263800032)
+- [Guido Editor](https://guidoeditor.grame.fr/)
 
 
 ## Contributers:
