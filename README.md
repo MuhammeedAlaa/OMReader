@@ -1,10 +1,10 @@
 # OMReader
 ![logo](screenshots/logo.png)
 
-[![GitHub contributors](https://img.shields.io/github/contributors/MuhammeedAlaa/image-processing)](https://github.com/MuhammeedAlaa/image-processing/graphs/contributors)
-[![GitHub forks](https://img.shields.io/github/forks/MuhammeedAlaa/image-processing)](https://github.com/MuhammeedAlaa/image-processing/network/members)
-[![GitHub stars](https://img.shields.io/github/stars/MuhammeedAlaa/image-processing)](https://github.com/MuhammeedAlaa/image-processing/stargazers)
-[![GitHub license](https://img.shields.io/github/license/MuhammeedAlaa/image-processing)](https://github.com/MuhammeedAlaa/image-processing/blob/master/License)
+[![GitHub contributors](https://img.shields.io/github/contributors/MuhammeedAlaa/OMReader)](https://github.com/MuhammeedAlaa/OMReader/graphs/contributors)
+[![GitHub forks](https://img.shields.io/github/forks/MuhammeedAlaa/OMReader)](https://github.com/MuhammeedAlaa/OMReader/network/members)
+[![GitHub stars](https://img.shields.io/github/stars/MuhammeedAlaa/OMReader)](https://github.com/MuhammeedAlaa/OMReader/stargazers)
+[![GitHub license](https://img.shields.io/github/license/MuhammeedAlaa/OMReader)](https://github.com/MuhammeedAlaa/OMReader/blob/master/License)
 
 ## Table of Contents
 - [Introduction](#About)
